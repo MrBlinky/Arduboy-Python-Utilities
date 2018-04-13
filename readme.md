@@ -5,7 +5,7 @@
 * Supports uploading to Arduboy, DevKit, and homemade Arduboys
 * Uploads .hex files, .hex files in .zip and .arduboy files
 * Protects unprotected bootloaders from being overwritten by large hex files
-* Supports patching on the fly for SSD1309 displays
+* Supports on the fly patching for SSD1309 displays
 
 ### Usage:
 
@@ -40,4 +40,4 @@ the backup is saved to a time stamped file **eeprom-backup.py-YYYYMMDD-HHMMSS.bi
 
 ## EEPROM restore
 
-you can restore a previously made EEPROM backup simple by dragging the **eeprom-backup.py-YYYYMMDD-HHMMSS.bin** file onto the **eeprom-restore.py** python script
+you can restore a previously made EEPROM backup simple by draging the **eeprom-backup.py-YYYYMMDD-HHMMSS.bin** file onto the **eeprom-restore.py** python script

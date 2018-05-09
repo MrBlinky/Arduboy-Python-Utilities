@@ -77,14 +77,6 @@ def bootloaderExit():
 ################################################################################
 
 bootloaderStart()      
-#test if bootloader can and will be overwritten by hex file
-bootloader.write("V") #get bootloader software version
-if bootloader.read(2) == "10" : #original caterina 1.0 bootloader
-  bootloader.write("r") #read lock bits
-  if (ord(bootloader.read(1)) & 0x10 != 0) and caterina_overwrite :
-    print "\nThis upload will most likely corrupt the bootloader. Upload aborted."
-    bootloaderExit()
-    delayedExit()
       
 ## Erase ##
 print "\nErasing sketch startup page"

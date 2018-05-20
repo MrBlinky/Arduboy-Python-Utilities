@@ -1,4 +1,8 @@
-# Python .Hex file and .Arduboy uploader for Arduboy
+# Python utilities for Arduboy
+
+## Uploader
+
+.Hex file and .Arduboy uploader for Arduboy
 
 ### Features
 
@@ -45,3 +49,7 @@ You can restore a previously made EEPROM backup simply by dragging the **eeprom-
 ## Erase sketch
 
 Erases the application/sketch startup page to keep the bootloader mode active indefinitely. This solves problematic (time sensitive) uploads using Arduino IDE.
+
+## Flashcart writer
+
+Writes a binary flash image to a flash cart connected to (a modified) Arduboy with expansion connector

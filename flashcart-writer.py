@@ -1,4 +1,4 @@
-print "\nArduboy flash cart writer v1.0 by Mr.Blinky May 2018\n"
+print "\nArduboy flash cart writer v1.01 by Mr.Blinky May 2018\n"
 
 #requires pyserial to be installed. Use "pip install pyserial" on commandline
 
@@ -92,8 +92,8 @@ f = open(filename,"rb")
 flashimage = bytearray(f.read())
 f.close
 
-if len(flashimage) % 256 != 0:
-  print "File must contain a multiple of 256 bytes data\nWrite aborted!"
+if len(flashimage) % BLOCKSIZE != 0:
+  print "File must contain a multiple of {} bytes data\nWrite aborted!".format(BLOCKSIZE)
   delayedExit()
   
 ## detect flashcart ##

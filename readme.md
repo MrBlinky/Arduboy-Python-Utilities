@@ -46,6 +46,10 @@ The backup is saved to a time stamped file in the format **eeprom-backup.py-YYYY
 
 You can restore a previously made EEPROM backup simply by dragging the **eeprom-backup.py-YYYYMMDD-HHMMSS.bin** file onto the **eeprom-restore.py** python script
 
+## EEPROM erase
+
+Erases the EEPROM content (An erased EEPROM contains 0xFF's).
+
 ## Erase sketch
 
 Erases the application/sketch startup page to keep the bootloader mode active indefinitely. This solves problematic (time sensitive) uploads using Arduino IDE.

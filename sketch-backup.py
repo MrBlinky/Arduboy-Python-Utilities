@@ -1,4 +1,4 @@
-print "\nArduboy EEPROM restore v1.0 by Mr.Blinky April 2018"
+print "\nArduboy sketch backup v1.0 by Mr.Blinky April 2018"
 
 #requires pyserial to be installed. Use "pip install pyserial" on commandline
 
@@ -58,7 +58,7 @@ def bootloaderStart():
     while getComPort(False) is None : time.sleep(0.1)
     port = getComPort(True)
   
-  time.sleep(0.1)  
+  time.sleep(0.1)	
   bootloader = Serial(port,57600)
   
 def bootloaderExit():
@@ -67,33 +67,18 @@ def bootloaderExit():
   bootloader.read(1)
   
 ################################################################################
-
-if len(sys.argv) != 2 :
-  print "\nUsage: {} eepromfile.bin\n".format(os.path.basename(sys.argv[0]))
-  delayedExit()
   
-filename = sys.argv[1]
-if not os.path.isfile(filename) :
-  print "File not found. [{}]".format(filename)
-  delayedExit()
-
-print 'Reading EEPROM data from file "{}"'.format(filename)
-f = open(filename,"rb")
-eepromdata = bytearray(f.read())
-f.close
-
-if len(eepromdata) != 1024:
-  print "File does not contain 1K (1024 bytes) of EEPROM data\nRestore aborted"
-  delayedExit()
-  
-## restore ##
 bootloaderStart()
-print "Restoring EEPROM data..."
+filename = time.strftime("sketch-backup-%Y%m%d-%H%M%S.bin", time.localtime())
+print "Reading sketch..."
 bootloader.write("A\x00\x00")
 bootloader.read(1)
-bootloader.write("B\x04\x00E")
-bootloader.write(eepromdata)
-bootloader.read(1)
-bootloaderExit()
+bootloader.write("g\x70\x00F")
+backupdata = bytearray(bootloader.read(0x7000))
+print 'saving sketch to "{}"'.format(filename)
+f = open (filename,"wb")
+f.write(backupdata)
+f.close
 print "Done"
+bootloaderExit()
 delayedExit()

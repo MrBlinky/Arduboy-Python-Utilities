@@ -19,6 +19,8 @@ compatibledevices = [
  "VID:PID=2341:0237", "VID:PID=2341:8237",
  #Sparkfun Pro Micro 5V
  "VID:PID=1B4F:9205", "VID:PID=1B4F:9206",
+ #Adafruit ItsyBitsy 5V
+ "VID:PID=239A:000E", "VID:PID=239A:800E",
 ]
 
 bootloader_active = False

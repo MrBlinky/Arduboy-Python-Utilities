@@ -1,9 +1,14 @@
-print "\nArduboy python uploader v1.0 by Mr.Blinky April 2018"
+print "\nArduboy python uploader v1.1 by Mr.Blinky April - June 2018"
 
-#requires pyserial to be installed. Use "pip install pyserial" on commandline
+#requires pyserial to be installed. Use "python -m pip install pyserial" on commandline
 
 #rename this script filename to 'uploader-1309.py' to patch uploads on the fly
 #for use with SSD1309 displays
+
+#rename this script filename to 'uploader-micro.py' to patch RX and TX LED 
+#polarity on the fly for use with Arduino / Genuino Micro
+
+#rename this script filename to 'uploader-micro-1309.py' to apply both patches
 
 import sys
 import time
@@ -146,6 +151,22 @@ if os.path.basename(sys.argv[0]).find("1309") >= 0:
   else:
     print "lcdBootPgrogram not found. SSD1309 display patch NOT applied\n"
 
+## Apply LED polarity patch for Arduino Micro if script name contains micro ##
+if os.path.basename(sys.argv[0]).lower().find("1309") >= 0:
+    for i in range(0,32768-4,2):
+        if flash_data[i:i+2] == '\x28\x98':   # RXLED1
+            flash_data[i+1] = 0x9a
+        elif flash_data[i:i+2] == '\x28\x9a': # RXLED0
+            flash_data[i+1] = 0x98
+        elif flash_data[i:i+2] == '\x5d\x98': # TXLED1
+            flash_data[i+1] = 0x9a
+        elif flash_data[i:i+2] == '\x5d\x9a': # TXLED0
+            flash_data[i+1] = 0x98
+        elif flash_data[i:i+4] == '\x81\xef\x85\xb9' : # Arduboy core init RXLED port
+            flash_data[i] = 0x80
+        elif flash_data[i:i+4] == '\x84\xe2\x8b\xb9' : # Arduboy core init TXLED port
+            flash_data[i+1] = 0xE0
+            
 ## check  for data in catarina bootloader area ##  
 for i in range (256) :
   if flash_page_used[i] :

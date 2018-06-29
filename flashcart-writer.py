@@ -1,6 +1,6 @@
-print "\nArduboy flash cart writer v1.01 by Mr.Blinky May 2018\n"
+print "\nArduboy flash cart writer v1.11 by Mr.Blinky May-June 2018\n"
 
-#requires pyserial to be installed. Use "pip install pyserial" on commandline
+#requires pyserial to be installed. Use "python -m pip install pyserial" on commandline
 
 import sys
 import time
@@ -20,9 +20,11 @@ compatibledevices = [
  #Sparkfun Pro Micro 5V
  "VID:PID=1B4F:9205", "VID:PID=1B4F:9206",
 ]
-
+PAGESIZE = 256
 BLOCKSIZE = 4096
 bootloader_active = False
+
+lcdBootProgram = b"\xD5\xF0\x8D\x14\xA1\xC8\x81\xCF\xD9\xF1\xAF\x20\x00"
 
 def delayedExit():
   time.sleep(2)
@@ -59,6 +61,10 @@ def bootloaderStart():
   
   time.sleep(0.1)  
   bootloader = Serial(port,57600)
+  
+def getVersion():
+  bootloader.write("V")
+  return int(bootloader.read(2))
 
 def getJedecID():
   bootloader.write("j")
@@ -78,50 +84,83 @@ def bootloaderExit():
   
 ################################################################################
 
-if len(sys.argv) != 2 :
-  print "\nUsage: {} flashimage.bin\n".format(os.path.basename(sys.argv[0]))
+if len(sys.argv) != 2 and len(sys.argv) != 3 :
+  print "\nUsage: {} [PageAddress] flashimage.bin\n".format(os.path.basename(sys.argv[0]))
   delayedExit()
+if len(sys.argv) == 2:
+  filename = sys.argv[1]
+  address = 0
+else:
+  address = int(sys.argv[1],0)
+  filename = sys.argv[2]
   
-filename = sys.argv[1]
 if not os.path.isfile(filename) :
   print "File not found. [{}]".format(filename)
   delayedExit()
-
+  
 print 'Reading flash image from file "{}"'.format(filename)
 f = open(filename,"rb")
 flashimage = bytearray(f.read())
 f.close
 
-if len(flashimage) % BLOCKSIZE != 0:
-  print "File must contain a multiple of {} bytes data\nWrite aborted!".format(BLOCKSIZE)
+if (len(flashimage) % PAGESIZE != 0):
+  print "Filesize must be  a multiple of {} bytes\nWrite aborted!".format(PAGESIZE)
   delayedExit()
-  
-## detect flashcart ##
+
+## Apply patch for SSD1309 displays if script name contains 1309 ##
+if os.path.basename(sys.argv[0]).find("1309") >= 0:
+  print "Patching image for SSD1309 displays...\n"
+  lcdBootProgram_addr = 0
+  while lcdBootProgram_addr >= 0:
+    lcdBootProgram_addr = flashimage.find(lcdBootProgram, lcdBootProgram_addr)
+    if lcdBootProgram_addr >= 0:
+      flashimage[lcdBootProgram_addr+2] = 0xE3;
+      flashimage[lcdBootProgram_addr+3] = 0xE3;
+      
 bootloaderStart()
+
+#check version
+if getVersion() < 13:
+  print "Bootloader has no flash cart support\nWrite aborted!".format(BLOCKSIZE)
+  delayedExit()
+
+## detect flash cart ##
 jedec_id = getJedecID()
 print "\nFlash cart JEDEC ID: {:02X}{:02X}{:02X}\n".format(ord(jedec_id[0]),ord(jedec_id[1]),ord(jedec_id[2]))
 
-## flash cart ##
+## write to flash cart ##
+oldtime=time.time()
 blocks = (len(flashimage) + BLOCKSIZE - 1) / BLOCKSIZE
 lastblock = blocks - 1
-for block in range (0,blocks):
-  print "\rWriting block {} of {}".format(block + 1,blocks),
+for block in range (0, blocks):
+  if block & 1:
+    bootloader.write("x\x40") #RGB OFF
+  else:  
+    bootloader.write("x\x42") #RGB RED
+  print "\rWriting block {}/{}".format(block + 1,blocks),
+  bootloader.read(1)
   if block == lastblock :
     blocklen = len(flashimage) - lastblock * BLOCKSIZE
-    print "\n"
   else :
     blocklen = BLOCKSIZE
+  blockaddr = address + block * BLOCKSIZE / PAGESIZE
   bootloader.write("A")
-  bootloader.write(chr(block >> 8))
-  bootloader.write(chr(block & 0xFF))
+  bootloader.write(chr((blockaddr >> 8) & 0xFF))
+  bootloader.write(chr(blockaddr & 0xFF))
   bootloader.read(1)
   bootloader.write("B")
-  bootloader.write(chr(blocklen >> 8))
+  bootloader.write(chr((blocklen >> 8) & 0xFF))
   bootloader.write(chr(blocklen & 0xFF))
   bootloader.write("C")
   bootloader.write(flashimage[block * BLOCKSIZE : block * BLOCKSIZE + blocklen])
   bootloader.read(1)
   
+bootloader.write("x\x44")#RGB GREEN
+bootloader.read(1)
+time.sleep(0.5)    
+bootloader.write("x\x00")#normal
+bootloader.read(1)
 bootloaderExit()
-print "Done"
+print "\nDone"
+print time.time() - oldtime
 delayedExit()

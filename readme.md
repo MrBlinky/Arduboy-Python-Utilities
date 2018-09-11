@@ -80,3 +80,13 @@ Writes a binary flash image to a flash cart connected to a (modified) Arduboy wi
 To automatically apply the SSD1309 patch to the uploaded image, make a copy of **flashcart-writer.py** and rename it to **flashcart-writer-1309.py**.
 
 example: `python flashcart-writer.py example-flashcart\flashcart-image.bin`
+
+## Flash cart backup
+
+* Works with both Python 2.7.x **AND** 3.7.x
+* Requires pySerial: `python -m pip install pyserial`
+
+Backup your existing flash cart to a binary image that can later be re-written to the Arduboy using the **flashcart-writer.py** script.
+The backup is saved to a time stamped file in the format **flashcart-backup-image-YYYYMMDD-HHMMSS.bin**
+
+example: `python flashcart-backup.py`

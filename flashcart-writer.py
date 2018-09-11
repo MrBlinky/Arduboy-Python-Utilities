@@ -126,7 +126,9 @@ if getVersion() < 13:
 
 ## detect flash cart ##
 jedec_id = getJedecID()
-print("\nFlash cart JEDEC ID: {:02X}{:02X}{:02X}\n".format(jedec_id[0],jedec_id[1],jedec_id[2]))
+capacity = 1 << jedec_id[2]
+print("\nFlash cart JEDEC ID: {:02X}{:02X}{:02X}".format(jedec_id[0],jedec_id[1],jedec_id[2]))
+print("Flash cart capacity: {} Kbyte\n".format(capacity // 1024))
 
 ## write to flash cart ##
 oldtime=time.time()

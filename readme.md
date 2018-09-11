@@ -62,6 +62,21 @@ Erases the EEPROM content (An erased EEPROM contains all 0xFF's).
 
 Erases the application/sketch startup page to keep the bootloader mode active indefinitely. This solves problematic (time sensitive) uploads using Arduino IDE.
 
+## Flash cart builder
+
+* Works with both Python 2.7.x **AND** 3.7.x
+* Requires PILlow: `python -m pip install pillow`
+
+Builds a binary flash image from an index file and supporting resource files (.png images and .hex files).  Use the **flashcart-writer.py** script to write the output to a flash cart.  See the **example-flashcart\flashcart-index.csv** file for example syntax.
+
+example: `python flashcart-builder.py example-flashcart\flashcart-index.csv`
+
 ## Flash cart writer
 
-Writes a binary flash image to a flash cart connected to (a modified) Arduboy with expansion connector (Cathy3K v1.3 bootloader required). make a copy of **flashcart-writer.py** and rename it to **flashcart-writer-1309.py** to Apply SSD1309 patch to the 
+* Works with both Python 2.7.x **AND** 3.7.x
+* Requires pySerial: `python -m pip install pyserial`
+
+Writes a binary flash image to a flash cart connected to a (modified) Arduboy with an expansion connector (Cathy3K v1.3 bootloader required).  Use the **flashcart-builder.py** script to build the image.
+To automatically apply the SSD1309 patch to the uploaded image, make a copy of **flashcart-writer.py** and rename it to **flashcart-writer-1309.py**.
+
+example: `python flashcart-writer.py example-flashcart\flashcart-image.bin`

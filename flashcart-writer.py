@@ -1,4 +1,4 @@
-print "\nArduboy flash cart writer v1.11 by Mr.Blinky May-June 2018\n"
+print("\nArduboy flash cart writer v1.11 by Mr.Blinky May-June 2018\n")
 
 #requires pyserial to be installed. Use "python -m pip install pyserial" on commandline
 
@@ -39,9 +39,9 @@ def getComPort(verbose):
       if  vidpid in device[2]:
         port=device[0]
         bootloader_active = (compatibledevices.index(vidpid) & 1) == 0
-        if verbose : print "Found {} at port {}".format(device[1],port)
+        if verbose : print("Found {} at port {}".format(device[1],port))
         return port
-  if verbose : print "Arduboy not found."
+  if verbose : print("Arduboy not found.")
 
 def bootloaderStart():
   global bootloader
@@ -49,7 +49,7 @@ def bootloaderStart():
   port = getComPort(True)
   if port is None : delayedExit()
   if not bootloader_active:
-    print "Selecting bootloader mode..."
+    print("Selecting bootloader mode...")
     bootloader = Serial(port,1200)
     bootloader.close()
     #wait for disconnect and reconnect in bootloader mode
@@ -63,29 +63,29 @@ def bootloaderStart():
   bootloader = Serial(port,57600)
   
 def getVersion():
-  bootloader.write("V")
+  bootloader.write("V".encode())
   return int(bootloader.read(2))
 
 def getJedecID():
-  bootloader.write("j")
+  bootloader.write("j".encode())
   jedec_id = bootloader.read(3)
   time.sleep(0.5)  
-  bootloader.write("j")
+  bootloader.write("j".encode())
   jedec_id2 = bootloader.read(3)
   if jedec_id2 != jedec_id :
-    print "No flash cart detected."
+    print("No flash cart detected.")
     delayedExit()
-  return jedec_id
+  return bytearray(jedec_id)
   
 def bootloaderExit():
   global bootloader
-  bootloader.write("E")
+  bootloader.write("E".encode())
   bootloader.read(1)
   
 ################################################################################
 
 if len(sys.argv) != 2 and len(sys.argv) != 3 :
-  print "\nUsage: {} [PageAddress] flashimage.bin\n".format(os.path.basename(sys.argv[0]))
+  print("\nUsage: {} [PageAddress] flashimage.bin\n".format(os.path.basename(sys.argv[0])))
   delayedExit()
 if len(sys.argv) == 2:
   filename = sys.argv[1]
@@ -95,21 +95,21 @@ else:
   filename = sys.argv[2]
   
 if not os.path.isfile(filename) :
-  print "File not found. [{}]".format(filename)
+  print("File not found. [{}]".format(filename))
   delayedExit()
   
-print 'Reading flash image from file "{}"'.format(filename)
+print('Reading flash image from file "{}"'.format(filename))
 f = open(filename,"rb")
 flashimage = bytearray(f.read())
 f.close
 
 if (len(flashimage) % PAGESIZE != 0):
-  print "Filesize must be  a multiple of {} bytes\nWrite aborted!".format(PAGESIZE)
+  print("Filesize must be  a multiple of {} bytes\nWrite aborted!".format(PAGESIZE))
   delayedExit()
 
 ## Apply patch for SSD1309 displays if script name contains 1309 ##
 if os.path.basename(sys.argv[0]).find("1309") >= 0:
-  print "Patching image for SSD1309 displays...\n"
+  print("Patching image for SSD1309 displays...\n")
   lcdBootProgram_addr = 0
   while lcdBootProgram_addr >= 0:
     lcdBootProgram_addr = flashimage.find(lcdBootProgram, lcdBootProgram_addr)
@@ -121,46 +121,51 @@ bootloaderStart()
 
 #check version
 if getVersion() < 13:
-  print "Bootloader has no flash cart support\nWrite aborted!".format(BLOCKSIZE)
+  print("Bootloader has no flash cart support\nWrite aborted!")
   delayedExit()
 
 ## detect flash cart ##
 jedec_id = getJedecID()
-print "\nFlash cart JEDEC ID: {:02X}{:02X}{:02X}\n".format(ord(jedec_id[0]),ord(jedec_id[1]),ord(jedec_id[2]))
+capacity = 1 << jedec_id[2]
+print("\nFlash cart JEDEC ID: {:02X}{:02X}{:02X}".format(jedec_id[0],jedec_id[1],jedec_id[2]))
+print("Flash cart capacity: {} Kbyte\n".format(capacity // 1024))
 
 ## write to flash cart ##
 oldtime=time.time()
-blocks = (len(flashimage) + BLOCKSIZE - 1) / BLOCKSIZE
+blocks = (len(flashimage) + BLOCKSIZE - 1) // BLOCKSIZE
 lastblock = blocks - 1
 for block in range (0, blocks):
   if block & 1:
-    bootloader.write("x\x40") #RGB OFF
+    bootloader.write("x\x40".encode()) #RGB OFF
   else:  
-    bootloader.write("x\x42") #RGB RED
-  print "\rWriting block {}/{}".format(block + 1,blocks),
+    bootloader.write("x\x42".encode()) #RGB RED
   bootloader.read(1)
+
+  print("\rWriting block {}/{}".format(block + 1,blocks))
+  blockaddr = address + block * BLOCKSIZE // PAGESIZE
   if block == lastblock :
     blocklen = len(flashimage) - lastblock * BLOCKSIZE
   else :
     blocklen = BLOCKSIZE
-  blockaddr = address + block * BLOCKSIZE / PAGESIZE
-  bootloader.write("A")
-  bootloader.write(chr((blockaddr >> 8) & 0xFF))
-  bootloader.write(chr(blockaddr & 0xFF))
+
+  bootloader.write("A".encode())
+  bootloader.write(bytearray([blockaddr >> 8, blockaddr & 0xFF]))
   bootloader.read(1)
-  bootloader.write("B")
-  bootloader.write(chr((blocklen >> 8) & 0xFF))
-  bootloader.write(chr(blocklen & 0xFF))
-  bootloader.write("C")
+
+  bootloader.write("B".encode())
+  bootloader.write(bytearray([blocklen >> 8, blocklen & 0xFF]))
+
+  bootloader.write("C".encode())
   bootloader.write(flashimage[block * BLOCKSIZE : block * BLOCKSIZE + blocklen])
   bootloader.read(1)
   
-bootloader.write("x\x44")#RGB GREEN
+bootloader.write("x\x44".encode())#RGB GREEN
 bootloader.read(1)
 time.sleep(0.5)    
-bootloader.write("x\x00")#normal
+bootloader.write("x\x00".encode())#normal
 bootloader.read(1)
+
 bootloaderExit()
-print "\nDone"
-print time.time() - oldtime
+print("\nDone")
+print(time.time() - oldtime)
 delayedExit()

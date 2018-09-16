@@ -1,4 +1,4 @@
-print("\nArduboy flash cart backup v1.11 by Mr.Blinky May-June 2018\n")
+print("\nArduboy flash cart backup v1.12 by Mr.Blinky May-Sep. 2018\n")
 
 #requires pyserial to be installed. Use "python -m pip install pyserial" on commandline
 
@@ -19,7 +19,24 @@ compatibledevices = [
  "VID:PID=2341:0237", "VID:PID=2341:8237",
  #Sparkfun Pro Micro 5V
  "VID:PID=1B4F:9205", "VID:PID=1B4F:9206",
+ #Adafruit ItsyBitsy 5V
+ "VID:PID=239A:000E", "VID:PID=239A:800E",
 ]
+
+manufacturers = {
+  0x01 : "Spansion",
+  0x14 : "Cypress",
+  0x1C : "EON",
+  0x1F : "Adesto(Atmel)",
+  0x20 : "Micron",
+  0x37 : "AMIC",
+  0x9D : "ISSI",
+  0xC2 : "General Plus",
+  0xC8 : "Giga Device",
+  0xBF : "Microchip",
+  0xEF : "Winbond"
+}
+
 PAGESIZE = 256
 BLOCKSIZE = 4096
 bootloader_active = False
@@ -91,9 +108,14 @@ if getVersion() < 13:
 
 ## detect flash cart ##
 jedec_id = getJedecID()
+if jedec_id[0] in manufacturers.keys():
+  manufacturer = manufacturers[jedec_id[0]]
+else:
+  manufacturer = "unknown"
 capacity = 1 << jedec_id[2]
-print("\nFlash cart JEDEC ID: {:02X}{:02X}{:02X}".format(jedec_id[0],jedec_id[1],jedec_id[2]))
-print("Flash cart capacity: {} Kbyte\n".format(capacity // 1024))
+print("\nFlash cart JEDEC ID    : {:02X}{:02X}{:02X}".format(jedec_id[0],jedec_id[1],jedec_id[2]))
+print("Flash cart Manufacturer: {}".format(manufacturer))
+print("Flash cart capacity    : {} Kbyte\n".format(capacity // 1024))
 
 filename = time.strftime("flashcart-backup-image-%Y%m%d-%H%M%S.bin", time.localtime())
 print('Writing flash image to file: "{}"\n'.format(filename))
@@ -103,7 +125,7 @@ blocks = capacity // BLOCKSIZE
 with open(filename,"wb") as binfile:
   for block in range (0, blocks):
 
-    print("\rReading block {}/{}".format(block + 1,blocks))
+    sys.stdout.write("\rReading block {}/{}".format(block + 1,blocks))
 
     blockaddr = block * BLOCKSIZE // PAGESIZE
 
@@ -121,6 +143,5 @@ with open(filename,"wb") as binfile:
     binfile.write(contents)
 
 bootloaderExit()
-print("\nDone")
-print(time.time() - oldtime)
+print("\n\nDone in {} seconds".format(round(time.time() - oldtime,2)))
 delayedExit()

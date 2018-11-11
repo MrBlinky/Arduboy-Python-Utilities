@@ -1,4 +1,4 @@
-print("\nArduboy Flashcart image builder v1.01 by Mr.Blinky June 2018\n")
+print("\nArduboy Flashcart image builder v1.02 by Mr.Blinky June 2018\n")
 
 # requires PILlow. Use 'python -m pip install pillow' to install
 
@@ -13,6 +13,8 @@ ID_LIST  = 0
 ID_TITLE = 1
 ID_TITLESCREEN = 2
 ID_HEXFILE = 3
+ID_DATAFILE = 4
+ID_SAVEFILE = 5
 
 def DelayedExit():
     time.sleep(3)
@@ -55,7 +57,7 @@ def LoadHexFileData(filename):
     f = open(filename,"r")
     records = f.readlines()
     f.close()
-    bytes = bytearray(b'\x00' * 32768)
+    bytes = bytearray(b'\xFF' * 32768)
     flash_end = 0
     for rcd in records :
         if rcd == ":00000001FF" : break
@@ -80,7 +82,18 @@ def LoadHexFileData(filename):
                     DelayedExit()
     flash_end = int((flash_end + 255) / 256) * 256
     return bytes[0:flash_end]
-    
+
+def LoadDataFile(filename):
+    if not os.path.isabs(filename):
+      filename = path + filename
+    if not os.path.isfile(filename) :
+        return bytearray()
+
+    with open(filename,"rb") as file:
+        bytes = bytearray(file.read())
+        pagealign = bytearray(b'\xFF' * (256 - len(bytes) % 256))
+        return bytes + pagealign
+        
 ################################################################################
 
 
@@ -104,15 +117,18 @@ with open(filename,"wb") as binfile:
         data = csv.reader(file, quotechar='"', delimiter = ";")
         next(data,None)
         print("Building: {}\n".format(filename))
-        print("List Title                     CurrentPage PreviousPage NextPage ProgramSize")
-        print("---- ------------------------- ----------- ------------ -------- -----------")
+        print("List Title                     Curr. Prev. Next  ProgSize DataSize")
+        print("---- ------------------------- ----- ----- ----- -------- --------")
         for row in data:
             header = DefaultHeader()
             title = LoadTitleScreenData(row[ID_TITLESCREEN])
             program = LoadHexFileData(row[ID_HEXFILE])
             programsize = len(program)
-            slotsize = (programsize >> 8) + 5
+            datafile = LoadDataFile(row[ID_DATAFILE])
+            datasize = len(datafile)
+            slotsize = ((programsize + datasize) >> 8) + 5
             programpage = currentpage + 5
+            datapage    = programpage + (programsize >> 8)
             nextpage += slotsize
             header[7] = int(row[ID_LIST]) #list number
             header[8] = previouspage >> 8
@@ -125,19 +141,30 @@ with open(filename,"wb") as binfile:
             if programsize > 0:
                 header[15] = programpage >> 8
                 header[16] = programpage & 0xFF
+                if datasize > 0:
+                    program[0x14] = b'\x18'
+                    program[0x15] = b'\x95'
+                    program[0x16] = datapage >> 8
+                    program[0x17] = datapage & 0xFF
+            if datasize > 0:
+                header[17] = datapage >> 8
+                header[18] = datapage & 0xFF
             binfile.write(header)
             binfile.write(title)
             binfile.write(program)
+            binfile.write(datafile)
             if programsize == 0:
-              print("{:4} {:25} {:11} {:12} {:8}".format(row[ID_LIST],row[ID_TITLE],currentpage,previouspage,nextpage))
+              print("{:4} {:25} {:5} {:5} {:5}".format(row[ID_LIST],row[ID_TITLE],currentpage,previouspage,nextpage))
             else:
-              print("{:4}  {:24} {:11} {:12} {:8} {:11}".format(row[ID_LIST],row[ID_TITLE],currentpage,previouspage,nextpage,programsize))
+              print("{:4}  {:24} {:5} {:5} {:5} {:8} {:8}".format(row[ID_LIST],row[ID_TITLE][:24],currentpage,previouspage,nextpage,programsize,datasize))
             previouspage = currentpage
             currentpage = nextpage
             if programsize > 0:
                 Sketches += 1
             else:
                 TitleScreens += 1
+        print("---- ------------------------- ----- ----- ----- -------- --------")
+        print("                                Page  Page  Page    Bytes    Bytes")
                 
 print("\nImage build complete with {} Title screens, {} Sketches, {} Kbyte used.".format(TitleScreens,Sketches,(nextpage+3) / 4))
 DelayedExit

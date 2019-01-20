@@ -4,9 +4,14 @@ For Windows, Linux and OSX
 
 ### Dependencies
 
-* Requires Python 2.7.x with PySerial installed
+* Requires Python 2.7.x or 3.7.x with PySerial installed.
+
+Note:
+Not all utilities work with Python 3.7.x yet.
 
 ## Uploader
+* Works with both Python 2.7.x **AND** 3.7.x
+* Requires pySerial: `python -m pip install pyserial`
 
 .Hex file and .Arduboy uploader for Arduboy
 

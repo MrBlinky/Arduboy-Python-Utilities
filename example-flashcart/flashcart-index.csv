@@ -1,19 +1,19 @@
-List;Discription;Title screen;Hex file
-0;Bootloader;arduboy_loader.png;
-1;Action Games;category-screens\Action.png;
-1;SanSan;Action\Sansan.png;Action\Sansan.hex
-2;Arcade Games;category-screens\Arcade.png;
-2;1943;Arcade\Nineteen43.png;Arcade\Nineteen43.hex
-2;Ardu-Whack;Arcade\Ardu-Whack.png;Arcade\Ardu-Whack.hex
-3;Platformer Games;category-screens\Platformer.png;
-3;CastleBoy;Platformer\CastleBoy.png;Platformer\CastleBoy.hex
-4;Puzzle Games;category-screens\Puzzle.png;
-4;Hangman;Puzzle\Hangman.png;Puzzle\Hangman.hex
-4;LATE;Puzzle\LATE.png;Puzzle\LATE.hex
-4;Minesweeper;Puzzle\Minesweeper.png;Puzzle\Minesweeper.hex
-5;Racing Games;category-screens\Racing.png;
-5;Ard-Drivin;Racing\Ard-Drivin.png;Racing\Ard-Drivin.hex
-6;RPG Games;category-screens\RPG.png;
-6;Rick & Morty;RPG\Rick-and-Morty.png;RPG\Rick-and-Morty.hex
-7;Shooter Games;category-screens\Shooter.png;
-7;Night Raid;Shooter\Night-Raid.png;Shooter\Night-Raid.hex
+List;Discription;Title screen;Hex file;Data file;Save file
+0;Bootloader;arduboy_loader.png;;;
+1;Action Games;category-screens\Action.png;;;
+1;SanSan;Action\Sansan.png;Action\Sansan.hex;;
+2;Arcade Games;category-screens\Arcade.png;;;
+2;1943;Arcade\Nineteen43.png;Arcade\Nineteen43.hex;;
+2;Ardu-Whack;Arcade\Ardu-Whack.png;Arcade\Ardu-Whack.hex;;
+3;Platformer Games;category-screens\Platformer.png;;;
+3;CastleBoy;Platformer\CastleBoy.png;Platformer\CastleBoy.hex;;
+4;Puzzle Games;category-screens\Puzzle.png;;;
+4;Hangman;Puzzle\Hangman.png;Puzzle\Hangman.hex;;
+4;LATE;Puzzle\LATE.png;Puzzle\LATE.hex;;
+4;Minesweeper;Puzzle\Minesweeper.png;Puzzle\Minesweeper.hex;;
+5;Racing Games;category-screens\Racing.png;;;
+5;Ard-Drivin;Racing\Ard-Drivin.png;Racing\Ard-Drivin.hex;;
+6;RPG Games;category-screens\RPG.png;;;
+6;Rick & Morty;RPG\Rick-and-Morty.png;RPG\Rick-and-Morty.hex;;
+7;Shooter Games;category-screens\Shooter.png;;;
+7;Night Raid;Shooter\Night-Raid.png;Shooter\Night-Raid.hex;;

@@ -1,4 +1,4 @@
-print("\nArduboy Flashcart image builder v1.02 by Mr.Blinky June 2018\n")
+print("\nArduboy Flashcart image builder v1.03 by Mr.Blinky Jun 2018 - Apr 2019\n")
 
 # requires PILlow. Use 'python -m pip install pillow' to install
 
@@ -117,9 +117,10 @@ with open(filename,"wb") as binfile:
         data = csv.reader(file, quotechar='"', delimiter = ";")
         next(data,None)
         print("Building: {}\n".format(filename))
-        print("List Title                     Curr. Prev. Next  ProgSize DataSize")
-        print("---- ------------------------- ----- ----- ----- -------- --------")
+        print("List Title                     Curr. Prev. Next  ProgSize DataSize SaveSize")
+        print("---- ------------------------- ----- ----- ----- -------- -------- --------")
         for row in data:
+            while len(row) < 7: row.append('') #add missing cells
             header = DefaultHeader()
             title = LoadTitleScreenData(row[ID_TITLESCREEN])
             program = LoadHexFileData(row[ID_HEXFILE])
@@ -142,8 +143,8 @@ with open(filename,"wb") as binfile:
                 header[15] = programpage >> 8
                 header[16] = programpage & 0xFF
                 if datasize > 0:
-                    program[0x14] = b'\x18'
-                    program[0x15] = b'\x95'
+                    program[0x14] = 0x18
+                    program[0x15] = 0x95
                     program[0x16] = datapage >> 8
                     program[0x17] = datapage & 0xFF
             if datasize > 0:
@@ -156,15 +157,15 @@ with open(filename,"wb") as binfile:
             if programsize == 0:
               print("{:4} {:25} {:5} {:5} {:5}".format(row[ID_LIST],row[ID_TITLE],currentpage,previouspage,nextpage))
             else:
-              print("{:4}  {:24} {:5} {:5} {:5} {:8} {:8}".format(row[ID_LIST],row[ID_TITLE][:24],currentpage,previouspage,nextpage,programsize,datasize))
+              print("{:4}  {:24} {:5} {:5} {:5} {:8} {:8} {:8}".format(row[ID_LIST],row[ID_TITLE][:24],currentpage,previouspage,nextpage,programsize,datasize,0))
             previouspage = currentpage
             currentpage = nextpage
             if programsize > 0:
                 Sketches += 1
             else:
                 TitleScreens += 1
-        print("---- ------------------------- ----- ----- ----- -------- --------")
-        print("                                Page  Page  Page    Bytes    Bytes")
+        print("---- ------------------------- ----- ----- ----- -------- -------- --------")
+        print("                                Page  Page  Page    Bytes    Bytes    Bytes")
                 
 print("\nImage build complete with {} Title screens, {} Sketches, {} Kbyte used.".format(TitleScreens,Sketches,(nextpage+3) / 4))
 DelayedExit

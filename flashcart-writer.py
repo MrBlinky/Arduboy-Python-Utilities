@@ -1,4 +1,4 @@
-print("\nArduboy flash cart writer v1.13 by Mr.Blinky May 2018 - Apr.2019\n")
+print("\nArduboy flash cart writer v1.15 by Mr.Blinky May 2018 - May 2019\n")
 
 #requires pyserial to be installed. Use "python -m pip install pyserial" on commandline
 
@@ -144,7 +144,7 @@ def writeFlash(pagenumber, flashdata):
   oldtime=time.time()
   # when starting partially in a block, preserve the beginning of old block data
   if pagenumber % PAGES_PER_BLOCK:
-    blocklen  = (PAGES_PER_BLOCK - pagenumber % PAGES_PER_BLOCK) * PAGESIZE
+    blocklen  = pagenumber % PAGES_PER_BLOCK * PAGESIZE
     blockaddr = pagenumber // PAGES_PER_BLOCK * PAGES_PER_BLOCK
     #read partial block data start
     bootloader.write(bytearray([ord("A"), blockaddr >> 8, blockaddr & 0xFF]))
@@ -235,18 +235,18 @@ if len(opts) > 0:
   writeFlash(programpage, programdata + savedata)
   print("\nPlease use the following line in your program setup function:\n")
   if savepage < MAX_PAGES:
-    print("  cartInit(0x{:04X}, 0x{:04X});\n".format(programpage,savepage))
+    print("  Cart::begin(0x{:04X}, 0x{:04X});\n".format(programpage,savepage))
   else:    
-    print("  cartInit(0x{:04X});\n".format(programpage))
+    print("  Cart::begin(0x{:04X});\n".format(programpage))
   print("\nor use defines at the beginning of your program:\n")  
   print("#define PROGRAM_DATA_PAGE 0x{:04X}".format(programpage))
   if savepage < MAX_PAGES:
     print("#define PROGRAM_SAVE_PAGE 0x{:04X}".format(savepage))
   print("\nand use the following in your program setup function:\n")
   if savepage < MAX_PAGES:
-    print("  cartInit(PROGRAM_DATA_PAGE, PROGRAM_SAVE_PAGE);\n")
+    print("  Cart::begin(PROGRAM_DATA_PAGE, PROGRAM_SAVE_PAGE);\n")
   else:    
-    print("  cartInit(PROGRAM_DATA_PAGE);\n")
+    print("  Cart::begin(PROGRAM_DATA_PAGE);\n")
   
 #handle image writing ##
 else:
@@ -254,7 +254,7 @@ else:
     pagenumber = 0
     filename = args[0]
   elif len(args) == 2:
-    pagenumber = int(args[0])
+    pagenumber = int(args[0],base=0)
     filename = args[1]
   else:
     usage()

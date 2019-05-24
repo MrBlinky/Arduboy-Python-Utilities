@@ -1,4 +1,4 @@
-print("\nArduboy Flashcart image builder v1.03 by Mr.Blinky Jun 2018 - Apr 2019\n")
+print("\nArduboy Flashcart image builder v1.04 by Mr.Blinky Jun 2018 - May 2019\n")
 
 # requires PILlow. Use 'python -m pip install pillow' to install
 
@@ -7,7 +7,12 @@ import time
 import os
 import csv
 import math
-from PIL import Image
+try:
+  from PIL import Image
+except:
+  print("The PILlow module is required but not installed!")
+  print("Use 'python -m pip install pillow' from the commandline to install.")
+  sys.exit()
 
 ID_LIST  = 0
 ID_TITLE = 1
@@ -18,7 +23,6 @@ ID_SAVEFILE = 5
 
 def DelayedExit():
     time.sleep(3)
-    #raw_input()  
     sys.exit()
 
 def DefaultHeader():
@@ -32,11 +36,11 @@ def LoadTitleScreenData(filename):
         DelayedExit()
     img = Image.open(filename).convert("1")
     width, height  = img.size
-    if (width != 128) and (height != 64) :
+    if (width != 128) or (height != 64) :
         print("Error: Title screen '{}' is not 128 x 64 pixels.".format(filename))
         DelayedExit()
     pixels = list(img.getdata())
-    bytes = bytearray(int((height / 8) * width))
+    bytes = bytearray(int((height // 8) * width))
     i = 0
     b = 0
     for y in range (0,height,8):

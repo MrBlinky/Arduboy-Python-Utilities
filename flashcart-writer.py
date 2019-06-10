@@ -1,4 +1,4 @@
-print("\nArduboy flash cart writer v1.15 by Mr.Blinky May 2018 - May 2019\n")
+print("\nArduboy flash cart writer v1.16 by Mr.Blinky May 2018 - Jun.2019\n")
 
 #requires pyserial to be installed. Use "python -m pip install pyserial" on commandline
 
@@ -44,7 +44,7 @@ manufacturers = {
 }
 
 PAGESIZE = 256
-BLOCKSIZE = 4096
+BLOCKSIZE = 65536
 PAGES_PER_BLOCK = BLOCKSIZE // PAGESIZE
 MAX_PAGES = 65536
 bootloader_active = False
@@ -149,7 +149,7 @@ def writeFlash(pagenumber, flashdata):
     #read partial block data start
     bootloader.write(bytearray([ord("A"), blockaddr >> 8, blockaddr & 0xFF]))
     bootloader.read(1)
-    bootloader.write(bytearray([ord("g"),blocklen >> 8, blocklen & 0xFF,ord("C")]))
+    bootloader.write(bytearray([ord("g"), (blocklen >> 8) & 0xFF, blocklen & 0xFF,ord("C")]))
     flashdata = bootloader.read(blocklen) + flashdata
     pagenumber = blockaddr
     
@@ -160,16 +160,16 @@ def writeFlash(pagenumber, flashdata):
     #read partial block data end
     bootloader.write(bytearray([ord("A"), blockaddr >> 8, blockaddr & 0xFF]))
     bootloader.read(1)
-    bootloader.write(bytearray([ord("g"),blocklen >> 8, blocklen & 0xFF,ord("C")]))
+    bootloader.write(bytearray([ord("g"), (blocklen >> 8) & 0xFF, blocklen & 0xFF,ord("C")]))
     flashdata += bootloader.read(blocklen)
 
   ## write to flash cart ##
   blocks = len(flashdata) // BLOCKSIZE
   for block in range (blocks):
     if block & 1:
-      bootloader.write(b"x\x40") #RGB LED OFF
+      bootloader.write(b"x\xC0") #RGB LED OFF, buttons disabled
     else:  
-      bootloader.write(b"x\x42") #RGB LED RED
+      bootloader.write(b"x\xC2") #RGB LED RED, buttons disabled
     bootloader.read(1)
     sys.stdout.write("\rWriting block {}/{}".format(block + 1,blocks))
     blockaddr = pagenumber + block * BLOCKSIZE // PAGESIZE
@@ -177,12 +177,12 @@ def writeFlash(pagenumber, flashdata):
     #write block 
     bootloader.write(bytearray([ord("A"), blockaddr >> 8, blockaddr & 0xFF]))
     bootloader.read(1)
-    bootloader.write(bytearray([ord("B"), blocklen >> 8, blocklen & 0xFF,ord("C")]))
+    bootloader.write(bytearray([ord("B"), (blocklen >> 8) & 0xFF, blocklen & 0xFF,ord("C")]))
     bootloader.write(flashdata[block * BLOCKSIZE : block * BLOCKSIZE + blocklen])
     bootloader.read(1)
   
   #write complete  
-  bootloader.write(b"x\x44")#RGB LED GREEN
+  bootloader.write(b"x\x44")#RGB LED GREEN, buttons enabled
   bootloader.read(1)
   time.sleep(0.5)    
   bootloaderExit()

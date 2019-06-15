@@ -6,6 +6,12 @@ For Windows, Linux and OSX
 
 * Requires Python 2.7.x or 3.7.x with PySerial installed.
 
+### Installing dependencies
+
+* Download and install python 2.7.x from https://www.python.org/downloads/ if it is not already installed
+* Make sure the option 'Add python.exe to path' is checked on install options (Windows)
+* After install run 'python -m pip install pyserial' from command line. For OSX run 'easy_install pyserial' from terminal.
+
 Note:
 Not all utilities work with Python 3.7.x yet.
 
@@ -14,6 +20,8 @@ Not all utilities work with Python 3.7.x yet.
 * Requires pySerial: `python -m pip install pyserial`
 
 .Hex file and .Arduboy uploader for Arduboy
+
+* Double click the **uploader-create-send-to-shortcut.vbs** for right click Send to upload option(Windows only)
 
 ### Features
 
@@ -29,13 +37,6 @@ Not all utilities work with Python 3.7.x yet.
   and choose *Send To* Arduboy uploader
 * Drag and drop .hex, .zip or .arduboy files on the **uploader.py** file
 * Command line: uploader.py [filetoupload]
-
-### Install
-
-* Download and install python 2.7.x from https://www.python.org/downloads/ if it is not already installed
-* Make sure the option 'Add python.exe to path' is checked on install options (Windows)
-* After install run 'python -m pip install pyserial' from command line. For OSX run 'easy_install pyserial' from terminal.
-* Double click the **uploader-create-send-to-shortcut.vbs** (Windows only)
 
 ## SSD1309 display support
 
@@ -81,10 +82,14 @@ example: `python flashcart-builder.py example-flashcart\flashcart-index.csv`
 * Works with both Python 2.7.x **AND** 3.7.x
 * Requires pySerial: `python -m pip install pyserial`
 
-Writes a binary flash image to a flash cart connected to a (modified) Arduboy with an expansion connector (Cathy3K v1.3 bootloader required).  Use the **flashcart-builder.py** script to build the image.
+Writes a binary flash image to external flash memory of Arduboy FX and Arduboy (clones) with added serial flash memory (Cathy3K v1.3+ bootloader required). Use the **flashcart-builder.py** script to build the image.
 To automatically apply the SSD1309 patch to the uploaded image, make a copy of **flashcart-writer.py** and rename it to **flashcart-writer-1309.py**.
 
 example: `python flashcart-writer.py example-flashcart\flashcart-image.bin`
+
+For development purposes external program data and save data can be stored at the end of external flash memory using -d and -s switches.
+
+example: `python flashcart-writer.py -d datafile.bin`
 
 ## Flash cart backup
 
@@ -95,3 +100,15 @@ Backup your existing flash cart to a binary image that can later be re-written t
 The backup is saved to a time stamped file in the format **flashcart-backup-image-YYYYMMDD-HHMMSS.bin**
 
 example: `python flashcart-backup.py`
+
+## Image Converter
+
+* Works with both Python 2.7.x **AND** 3.7.x
+* Requires PILlow: `python -m pip install pillow`
+
+Converts .bmp or .png image files to C++ include file. Image width and height can be any size. Tilesheets and spritesheets with optional spacing can be converted by
+specifying the width and height and optional spacing in the filename.
+When an image contains transparency information the converted data will include a sprite mask.
+Script can convert multiple files in one go by supplying multiple filenames.
+
+example: `python image-converter.py tilesheet_16x16.png`

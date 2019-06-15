@@ -1,4 +1,4 @@
-print("\nArduboy image include converter 1.0 by Mr.Blinky May 2019\n")
+print("\nArduboy image include converter 1.01 by Mr.Blinky May - Jun.2019\n")
 
 #requires PILlow to be installed. Use "python -m pip install pillow" on commandline to install
 
@@ -39,36 +39,30 @@ def usage():
 
 if len(sys.argv) < 2 : usage()
 for filenumber in range (1,len(sys.argv)): #support multiple files
-  filename = sys.argv[filenumber] 
-  
-  ## parse filename ## FILENAME_[WxH]_[HS]_[VS].[EXT]"
-  spriteName = ""
+  filename = sys.argv[filenumber]
+  print("converting '{}'".format(filename))
+  ## parse filename ## FILENAME_[WxH]_[S].[EXT]"
   spriteWidth = 0
   spriteHeight = 0
   spacing = 0  
-  elements = filename.lower().split("_")
+  elements = os.path.basename(os.path.splitext(filename)[0]).lower().split("_")
   lastElement = len(elements)-1
-  #remove file extension
-  elements[lastElement] = elements[lastElement].split(".")[0] 
-  i = lastElement
-  
   #get width and height from filename
+  i = lastElement
   while i > 0:
     if "x" in elements[i]:
       spriteWidth = int(elements[i].split("x")[0])
       spriteHeight = int(elements[i].split("x")[1])
+      if i < lastElement:
+        spacing = int(elements[i+1])
       break
     else: i -= 1  
-  #get (optional) spacing from filename
-  if i > 0:
-    if lastElement - i == 1 :
-      spacing = int(elements[i+1])
   else:
     i = lastElement
   #get sprite name (may contain underscores) from filename
-  for j in range(i):
-    spriteName += elements[j] + "_" 
-  spriteName =spriteName[:-1]
+  spriteName = elements[0]
+  for j in range(1,i):
+    spriteName += "_" + elements[j] 
   
   #load image
   img = Image.open(sys.argv[1]).convert("RGBA")
@@ -101,10 +95,10 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
   i = 4
   b = 0
   m = 0
-  with open(sys.argv[1]+".h","w") as headerfile:
+  with open(os.path.splitext(filename)[0] + ".h","w") as headerfile:
     headerfile.write("\n")
-    headerfile.write("constexpr unit8_t {}_width = {};\n".format(spriteName, spriteWidth))
-    headerfile.write("constexpr unit8_t {}_height = {};\n".format(spriteName,spriteHeight))
+    headerfile.write("constexpr uint8_t {}_width = {};\n".format(spriteName, spriteWidth))
+    headerfile.write("constexpr uint8_t {}_height = {};\n".format(spriteName,spriteHeight))
     headerfile.write("\n")
     headerfile.write("const uint8_t PROGMEM {}[] =\n".format(spriteName,))
     headerfile.write("{\n")
@@ -142,8 +136,8 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
     headerfile.write("};\n")
     headerfile.close()
     
-  #save bytearray to file (temporary function for fx datafile)
-  with open(sys.argv[1]+".bin","wb") as binfile:
+  #save bytearray to file (temporary code for fx datafile creation)
+  with open(os.path.splitext(filename)[0] + ".bin", "wb") as binfile:
     binfile.write(bytes)
     binfile.close
 

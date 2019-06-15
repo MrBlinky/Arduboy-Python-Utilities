@@ -1,12 +1,17 @@
-print("\nArduboy flash cart backup v1.12 by Mr.Blinky May-Sep. 2018\n")
+print("\nArduboy flash cart backup v1.13 by Mr.Blinky May 2018 jun.2019\n")
 
 #requires pyserial to be installed. Use "python -m pip install pyserial" on commandline
 
 import sys
 import time
 import os
-from serial.tools.list_ports import comports
-from serial import Serial
+try: 
+  from serial.tools.list_ports  import comports
+  from serial import Serial
+except:
+  print("The pySerial module is required but not installed!")
+  print("Use 'python -m pip install pyserial' from the commandline to install.")
+  sys.exit()
 
 compatibledevices = [
  #Arduboy Leonardo
@@ -38,12 +43,11 @@ manufacturers = {
 }
 
 PAGESIZE = 256
-BLOCKSIZE = 4096
+BLOCKSIZE = 65536
 bootloader_active = False
 
 def delayedExit():
   time.sleep(2)
-  #raw_input()  
   sys.exit()
 
 def getComPort(verbose):
@@ -67,15 +71,29 @@ def bootloaderStart():
     print("Selecting bootloader mode...")
     bootloader = Serial(port,1200)
     bootloader.close()
+    time.sleep(0.5)	
     #wait for disconnect and reconnect in bootloader mode
     while getComPort(False) == port :
       time.sleep(0.1)
       if bootloader_active: break        
     while getComPort(False) is None : time.sleep(0.1)
     port = getComPort(True)
-  
-  time.sleep(0.1)  
-  bootloader = Serial(port,57600)
+
+  sys.stdout.write("Opening port ...")
+  sys.stdout.flush()
+  for retries in range(20):
+    try:
+      time.sleep(0.1)  
+      bootloader = Serial(port,57600)
+      break
+    except:
+      if retries == 19:
+        print(" Failed!")
+        delayedExit()
+      sys.stdout.write(".")
+      sys.stdout.flush()
+      time.sleep(0.4)
+  print()
   
 def getVersion():
   bootloader.write("V".encode())
@@ -124,7 +142,11 @@ oldtime=time.time()
 blocks = capacity // BLOCKSIZE
 with open(filename,"wb") as binfile:
   for block in range (0, blocks):
-
+    if block & 1:
+      bootloader.write(b"x\xC0") #RGB BLUE OFF, buttons disabled
+    else:  
+      bootloader.write(b"x\xC1") #RGB BLUE RED, buttons disabled
+    bootloader.read(1)      
     sys.stdout.write("\rReading block {}/{}".format(block + 1,blocks))
 
     blockaddr = block * BLOCKSIZE // PAGESIZE
@@ -136,12 +158,15 @@ with open(filename,"wb") as binfile:
     blocklen = BLOCKSIZE
 
     bootloader.write("g".encode())
-    bootloader.write(bytearray([blocklen >> 8, blocklen & 0xFF]))
+    bootloader.write(bytearray([(blocklen >> 8) & 0xFF, blocklen & 0xFF]))
 
     bootloader.write("C".encode())
     contents=bootloader.read(blocklen)
     binfile.write(contents)
 
+bootloader.write(b"x\x44")#RGB LED GREEN, buttons enabled
+bootloader.read(1)
+time.sleep(0.5)    
 bootloaderExit()
 print("\n\nDone in {} seconds".format(round(time.time() - oldtime,2)))
 delayedExit()

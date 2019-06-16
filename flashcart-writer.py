@@ -180,6 +180,13 @@ def writeFlash(pagenumber, flashdata):
     bootloader.write(bytearray([ord("B"), (blocklen >> 8) & 0xFF, blocklen & 0xFF,ord("C")]))
     bootloader.write(flashdata[block * BLOCKSIZE : block * BLOCKSIZE + blocklen])
     bootloader.read(1)
+    if verifyAfterWrite:
+      bootloader.write(bytearray([ord("A"), blockaddr >> 8, blockaddr & 0xFF]))
+      bootloader.read(1)
+      bootloader.write(bytearray([ord("g"), (blocklen >> 8) & 0xFF, blocklen & 0xFF,ord("C")]))
+      if bootloader.read(blocklen) != flashdata[block * BLOCKSIZE : block * BLOCKSIZE + blocklen]:
+        print(" verify failed!\n\nWrite aborted.")
+        break
   
   #write complete  
   bootloader.write(b"x\x44")#RGB LED GREEN, buttons enabled
@@ -207,6 +214,9 @@ try:
   opts,args = getopt(sys.argv[1:],"hd:s:z:",["datafile=","savefile=","savesize="])
 except:
   usage()
+## verify each block after writing if script name contains verify ##  
+verifyAfterWrite = os.path.basename(sys.argv[0]).find("verify") >= 0
+
 ## handle development writing ##
 if len(opts) > 0:
   programdata = bytearray()

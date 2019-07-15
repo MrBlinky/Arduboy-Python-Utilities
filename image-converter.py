@@ -1,4 +1,4 @@
-print("\nArduboy image include converter 1.01 by Mr.Blinky May - Jun.2019\n")
+print("\nArduboy image include converter 1.02 by Mr.Blinky May - Jul.2019\n")
 
 #requires PILlow to be installed. Use "python -m pip install pillow" on commandline to install
 
@@ -65,7 +65,7 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
     spriteName += "_" + elements[j] 
   
   #load image
-  img = Image.open(sys.argv[1]).convert("RGBA")
+  img = Image.open(filename).convert("RGBA")
   pixels = list(img.getdata())
   #check for transparency
   transparency = False
@@ -95,7 +95,7 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
   i = 4
   b = 0
   m = 0
-  with open(os.path.splitext(filename)[0] + ".h","w") as headerfile:
+  with open(os.path.join(os.path.split(filename)[0], spriteName) + ".h","w") as headerfile:
     headerfile.write("\n")
     headerfile.write("constexpr uint8_t {}_width = {};\n".format(spriteName, spriteWidth))
     headerfile.write("constexpr uint8_t {}_height = {};\n".format(spriteName,spriteHeight))
@@ -104,9 +104,11 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
     headerfile.write("{\n")
     headerfile.write("  {}_width, {}_height,\n".format(spriteName, spriteName))
     fy = spacing
+    frames = 0
     for v in range(vframes):
       fx = spacing
       for h in range(hframes):
+        headerfile.write("  //Frame {}\n".format(frames))
         for y in range (0,spriteHeight,8):
           line = "  "
           for x in range (0,spriteWidth):
@@ -123,7 +125,7 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
             i += 1
             if transparency:
               bytes[i] = m 
-              line += "0x{:02X}, ".format(b)
+              line += "0x{:02X}, ".format(m)
               i += 1
           lastline = (v+1 == vframes) and (h+1 == hframes) and (y+8 >= spriteHeight)
           if lastline:
@@ -131,13 +133,14 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
           headerfile.write(line + "\n")
         if not lastline: 
           headerfile.write("\n")
+        frames += 1  
         fx += spriteWidth + spacing
       fy += spriteHeight + spacing
     headerfile.write("};\n")
     headerfile.close()
     
   #save bytearray to file (temporary code for fx datafile creation)
-  with open(os.path.splitext(filename)[0] + ".bin", "wb") as binfile:
+  with open(os.path.join(os.path.split(filename)[0], spriteName) + ".bin", "wb") as binfile:
     binfile.write(bytes)
     binfile.close
 

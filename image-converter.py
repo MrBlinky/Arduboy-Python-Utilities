@@ -1,4 +1,4 @@
-print("\nArduboy image include converter 1.02 by Mr.Blinky May - Jul.2019\n")
+print("\nArduboy image include converter 1.03 by Mr.Blinky May - Jul.2019\n")
 
 #requires PILlow to be installed. Use "python -m pip install pillow" on commandline to install
 
@@ -45,7 +45,7 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
   spriteWidth = 0
   spriteHeight = 0
   spacing = 0  
-  elements = os.path.basename(os.path.splitext(filename)[0]).lower().split("_")
+  elements = os.path.basename(os.path.splitext(filename)[0]).split("_")
   lastElement = len(elements)-1
   #get width and height from filename
   i = lastElement
@@ -97,12 +97,12 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
   m = 0
   with open(os.path.join(os.path.split(filename)[0], spriteName) + ".h","w") as headerfile:
     headerfile.write("\n")
-    headerfile.write("constexpr uint8_t {}_width = {};\n".format(spriteName, spriteWidth))
-    headerfile.write("constexpr uint8_t {}_height = {};\n".format(spriteName,spriteHeight))
+    headerfile.write("constexpr uint8_t {}Width = {};\n".format(spriteName, spriteWidth))
+    headerfile.write("constexpr uint8_t {}Height = {};\n".format(spriteName,spriteHeight))
     headerfile.write("\n")
     headerfile.write("const uint8_t PROGMEM {}[] =\n".format(spriteName,))
     headerfile.write("{\n")
-    headerfile.write("  {}_width, {}_height,\n".format(spriteName, spriteName))
+    headerfile.write("  {}Width, {}Height,\n".format(spriteName, spriteName))
     fy = spacing
     frames = 0
     for v in range(vframes):

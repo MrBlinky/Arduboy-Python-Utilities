@@ -1,4 +1,4 @@
-print("\nArduboy Flashcart image builder v1.05 by Mr.Blinky Jun 2018 - Jul 2019\n")
+print("\nArduboy Flashcart image builder v1.06 by Mr.Blinky Jun 2018 - Jul 2019\n")
 
 # requires PILlow. Use 'python -m pip install pillow' to install
 
@@ -20,6 +20,10 @@ ID_TITLESCREEN = 2
 ID_HEXFILE = 3
 ID_DATAFILE = 4
 ID_SAVEFILE = 5
+
+def fixPath(filename):
+     if os.sep == "\\": return filename.replace("/","\\")
+     return filename.replace("\\","/")
 
 def DelayedExit():
     time.sleep(3)
@@ -126,10 +130,10 @@ with open(filename,"wb") as binfile:
         for row in data:
             while len(row) < 7: row.append('') #add missing cells
             header = DefaultHeader()
-            title = LoadTitleScreenData(row[ID_TITLESCREEN])
-            program = LoadHexFileData(row[ID_HEXFILE])
+            title = LoadTitleScreenData(fixPath(row[ID_TITLESCREEN]))
+            program = LoadHexFileData(fixPath(row[ID_HEXFILE]))
             programsize = len(program)
-            datafile = LoadDataFile(row[ID_DATAFILE])
+            datafile = LoadDataFile(fixPath(row[ID_DATAFILE]))
             datasize = len(datafile)
             slotsize = ((programsize + datasize) >> 8) + 5
             programpage = currentpage + 5

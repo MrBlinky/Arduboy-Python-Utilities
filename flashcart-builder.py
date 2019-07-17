@@ -1,4 +1,4 @@
-print("\nArduboy Flashcart image builder v1.04 by Mr.Blinky Jun 2018 - May 2019\n")
+print("\nArduboy Flashcart image builder v1.05 by Mr.Blinky Jun 2018 - Jul 2019\n")
 
 # requires PILlow. Use 'python -m pip install pillow' to install
 
@@ -115,7 +115,7 @@ if not os.path.isfile(csvfile) :
     DelayedExit()
 TitleScreens = 0
 Sketches = 0
-filename = csvfile.lower().replace("-index","").replace(".csv","-image.bin")
+filename = path + os.path.basename(csvfile).lower().replace("-index","").replace(".csv","-image.bin")
 with open(filename,"wb") as binfile:
     with open(csvfile,"r") as file:
         data = csv.reader(file, quotechar='"', delimiter = ";")

@@ -1,4 +1,5 @@
-print("\nArduboy image include converter 1.03 by Mr.Blinky May - Jul.2019\n")
+#!/usr/bin/env python3
+print("\nArduboy image include converter 1.04 by Mr.Blinky May - Apr.2020\n")
 
 #requires PILlow to be installed. Use "python -m pip install pillow" on commandline to install
 
@@ -60,10 +61,10 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
   else:
     i = lastElement
   #get sprite name (may contain underscores) from filename
-  spriteName = elements[0]
+  name = elements[0]
   for j in range(1,i):
-    spriteName += "_" + elements[j] 
-  
+    name += "_" + elements[j] 
+  spriteName = name.replace("-","_")
   #load image
   img = Image.open(filename).convert("RGBA")
   pixels = list(img.getdata())
@@ -95,8 +96,8 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
   i = 4
   b = 0
   m = 0
-  with open(os.path.join(os.path.split(filename)[0], spriteName) + ".h","w") as headerfile:
-    headerfile.write("\n")
+  with open(os.path.join(os.path.split(filename)[0], name) + ".h","w") as headerfile:
+    headerfile.write("#pragma once\n")
     headerfile.write("constexpr uint8_t {}Width = {};\n".format(spriteName, spriteWidth))
     headerfile.write("constexpr uint8_t {}Height = {};\n".format(spriteName,spriteHeight))
     headerfile.write("\n")
@@ -140,7 +141,7 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
     headerfile.close()
     
   #save bytearray to file (temporary code for fx datafile creation)
-  with open(os.path.join(os.path.split(filename)[0], spriteName) + ".bin", "wb") as binfile:
-    binfile.write(bytes)
-    binfile.close
+  #with open(os.path.join(os.path.split(filename)[0], name) + ".bin", "wb") as binfile:
+  #  binfile.write(bytes)
+  #  binfile.close
 

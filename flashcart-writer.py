@@ -1,4 +1,5 @@
-print("\nArduboy flash cart writer v1.16 by Mr.Blinky May 2018 - Jun.2019\n")
+#!/usr/bin/env python3
+print("\nArduboy flash cart writer v1.17 by Mr.Blinky May 2018 - Apr.2020\n")
 
 #requires pyserial to be installed. Use "python -m pip install pyserial" on commandline
 
@@ -139,7 +140,7 @@ def writeFlash(pagenumber, flashdata):
   capacity = 1 << jedec_id[2]
   print("\nFlash cart JEDEC ID    : {:02X}{:02X}{:02X}".format(jedec_id[0],jedec_id[1],jedec_id[2]))
   print("Flash cart Manufacturer: {}".format(manufacturer))
-  print("Flash cart capacity    : {} Kbyte\n".format(capacity // 1024))
+  if manufacturer != "unknown": print("Flash cart capacity    : {} KB\n".format(capacity // 1024))
   
   oldtime=time.time()
   # when starting partially in a block, preserve the beginning of old block data
@@ -166,10 +167,10 @@ def writeFlash(pagenumber, flashdata):
   ## write to flash cart ##
   blocks = len(flashdata) // BLOCKSIZE
   for block in range (blocks):
-    if block & 1:
-      bootloader.write(b"x\xC0") #RGB LED OFF, buttons disabled
-    else:  
+    if (block & 1 == 0) or verifyAfterWrite:
       bootloader.write(b"x\xC2") #RGB LED RED, buttons disabled
+    else:  
+      bootloader.write(b"x\xC0") #RGB LED OFF, buttons disabled
     bootloader.read(1)
     sys.stdout.write("\rWriting block {}/{}".format(block + 1,blocks))
     blockaddr = pagenumber + block * BLOCKSIZE // PAGESIZE
@@ -181,6 +182,8 @@ def writeFlash(pagenumber, flashdata):
     bootloader.write(flashdata[block * BLOCKSIZE : block * BLOCKSIZE + blocklen])
     bootloader.read(1)
     if verifyAfterWrite:
+      bootloader.write(b"x\xC1") #RGB BLUE RED, buttons disabled
+      bootloader.read(1)
       bootloader.write(bytearray([ord("A"), blockaddr >> 8, blockaddr & 0xFF]))
       bootloader.read(1)
       bootloader.write(bytearray([ord("g"), (blocklen >> 8) & 0xFF, blocklen & 0xFF,ord("C")]))

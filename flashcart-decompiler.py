@@ -5,9 +5,7 @@ print("\nArduboy Flashcart image decompiler v0.1 by JJCooley Nov 2020\n")
 # requires PILlow. Use 'python -m pip install pillow' to install
 
 import sys
-import time
 import os
-import csv
 import math
 import shutil
 try:
@@ -115,16 +113,19 @@ def GetProgramSections(fullBinaryData):
         if HEADER_START_BYTES != fullBinaryData[currentHeaderIndex:currentHeaderIndex+len(HEADER_START_BYTES)]:
             break
 
+        slotByteSize = ((fullBinaryData[currentHeaderIndex+SLOT_SIZE_HEADER_INDEX] << 8) + fullBinaryData[currentHeaderIndex+SLOT_SIZE_HEADER_INDEX+1])*2*128
+
         programCategory = fullBinaryData[currentHeaderIndex+CATEGORY_HEADER_INDEX]
         titleImageData = fullBinaryData[currentHeaderIndex+HEADER_LENGTH:currentHeaderIndex+HEADER_LENGTH+TITLE_IMAGE_LENGTH]
         programData = fullBinaryData[currentHeaderIndex+HEADER_LENGTH+TITLE_IMAGE_LENGTH:currentHeaderIndex+HEADER_LENGTH+TITLE_IMAGE_LENGTH+fullBinaryData[currentHeaderIndex+PROGRAM_SIZE_HEADER_INDEX]*128]
+        datafileData = fullBinaryData[currentHeaderIndex+HEADER_LENGTH+TITLE_IMAGE_LENGTH+fullBinaryData[currentHeaderIndex+PROGRAM_SIZE_HEADER_INDEX]*128:currentHeaderIndex+slotByteSize]
 
         if previousCategory != programCategory:
             programIndex = 0
 
-        programDataArray.append([programCategory, programIndex, titleImageData, programData])
+        programDataArray.append([programCategory, programIndex, titleImageData, programData, datafileData])
 
-        currentHeaderIndex += ((fullBinaryData[currentHeaderIndex+SLOT_SIZE_HEADER_INDEX] << 8) + fullBinaryData[currentHeaderIndex+SLOT_SIZE_HEADER_INDEX+1])*2*128
+        currentHeaderIndex += slotByteSize
 
         previousCategory = programCategory
         programIndex += 1
@@ -142,7 +143,7 @@ def DecompileProgramParts(programSections):
     for programAbsoluteIndex in range(0, len(programSections)):
         programData = programSections[programAbsoluteIndex]
 
-        decompiledProgramData.append([programData[CATEGORY_INDEX], programData[PROGRAM_INDEX], DecompileTitleScreenData(programData[TITLE_IMAGE_INDEX]), DecompileHexFileData(programData[PROGRAM_HEXFILE_INDEX])])
+        decompiledProgramData.append([programData[CATEGORY_INDEX], programData[PROGRAM_INDEX], DecompileTitleScreenData(programData[TITLE_IMAGE_INDEX]), DecompileHexFileData(programData[PROGRAM_HEXFILE_INDEX]), programData[DATAFILE_INDEX]])
 
         print("{:7} {:7} {:9} {:6} {:13}".format(str(round(100*programAbsoluteIndex/(len(programSections)-1), 2))+"%", programAbsoluteIndex, programData[CATEGORY_INDEX], programData[PROGRAM_INDEX], len(programData[PROGRAM_HEXFILE_INDEX])))
 
@@ -181,6 +182,13 @@ def WriteDecompiledProgramData(decompiledProgramData):
             hexFile.write(decompiledProgramData[programDataIndex][PROGRAM_HEXFILE_INDEX])
             hexFile.close()
 
+        shouldIncludeDataFile = len(decompiledProgramData[programDataIndex][DATAFILE_INDEX]) > 0
+        if shouldIncludeDataFile:
+            datafilePath = os.path.join(programDirPath, programIndex + ".bin")
+            datafile = open(datafilePath, 'wb')
+            datafile.write(decompiledProgramData[programDataIndex][DATAFILE_INDEX])
+            datafile.close()
+
         indexCSVString += "\n"
         indexCSVString += categoryIndex + ";"
         indexCSVString += categoryIndex + "-" + programIndex + ";"
@@ -190,6 +198,7 @@ def WriteDecompiledProgramData(decompiledProgramData):
 
     indexCSVFile = open(os.path.join(decompiledPath, "flashcart-index.csv"), 'w')
     indexCSVFile.write(indexCSVString)
+    indexCSVFile.close()
 
 
 if len(sys.argv) != 2:
@@ -198,6 +207,7 @@ if len(sys.argv) != 2:
 
 flashcartBinFile = open(sys.argv[1], 'rb')
 flashcartBinData = flashcartBinFile.read()
+flashcartBinFile.close()
 
 programSections = GetProgramSections(flashcartBinData)
 decompiledProgramData = DecompileProgramParts(programSections)

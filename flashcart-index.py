@@ -54,10 +54,14 @@ def main(flashcart_path):
             img_file_path = os.path.join(category, "{}.png".format(f))
             rows.append([category_num, f, img_file_path, file_path, None, None])
 
-    with open(os.path.join(flashcart_path, 'flashcart-index.csv'), 'w') as csv_file:
+    flashcart_index_output = os.path.join(flashcart_path, 'flashcart-index.csv')
+    with open(flashcart_index_output, 'w') as csv_file:
         writer = csv.writer(csv_file, delimiter=';')
         for row in rows:
             writer.writerow(row)
+
+        print('flashcart index file saved to {}'.format(flashcart_index_output))
+
 
 
 if __name__ == "__main__":

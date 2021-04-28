@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-print("\nArduboy image include converter 1.04 by Mr.Blinky May - Apr.2020\n")
+print("\nArduboy image to include file converter 1.05 by Mr.Blinky May 2020-Apr.2021\n")
 
 #requires PILlow to be installed. Use "python -m pip install pillow" on commandline to install
 
@@ -119,8 +119,10 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
               if (y + p) < spriteHeight: #for heights that are not a multiple of 8 pixels
                 if pixels[(fy + y + p) * img.size[0] + fx + x][1] > 64:
                   b |= 0x80 #white pixel
-                if pixels[(fy + y + p) * img.size[0] + fx + x][3] == 255:
-                  m |= 0x80 #transparent pixel
+                if pixels[(fy + y + p) * img.size[0] + fx + x][3] > 64:
+                  m |= 0x80 #opaque pixel
+                else:
+                  b &= 0x7F #for transparent pixel clear possible white pixel 
             bytes[i] = b
             line += "0x{:02X}, ".format(b)
             i += 1

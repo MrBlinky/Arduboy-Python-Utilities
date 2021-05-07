@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-print("\nArduboy image to include file converter 1.05 by Mr.Blinky May 2020-Apr.2021\n")
+print("\nArduboy image to include file converter 1.06 by Mr.Blinky May 2020-May.2021\n")
 
 #requires PILlow to be installed. Use "python -m pip install pillow" on commandline to install
 
@@ -38,6 +38,7 @@ def usage():
 
 ################################################################################
 
+fxOutut = "-fx" in os.path.basename(sys.argv[0]).lower()
 if len(sys.argv) < 2 : usage()
 for filenumber in range (1,len(sys.argv)): #support multiple files
   filename = sys.argv[filenumber]
@@ -142,8 +143,8 @@ for filenumber in range (1,len(sys.argv)): #support multiple files
     headerfile.write("};\n")
     headerfile.close()
     
-  #save bytearray to file (temporary code for fx datafile creation)
-  #with open(os.path.join(os.path.split(filename)[0], name) + ".bin", "wb") as binfile:
-  #  binfile.write(bytes)
-  #  binfile.close
+  if fxOutut:
+    with open(os.path.join(os.path.split(filename)[0], name) + ".bin", "wb") as binfile:
+      binfile.write(bytes)
+      binfile.close
 

@@ -1,4 +1,4 @@
-print("\nArduboy Flashcart image builder v1.07 by Mr.Blinky Jun 2018 - Jun 2020\n")
+print("\nArduboy Flashcart image builder v1.08 by Mr.Blinky Jun 2018 - Jun 2021\n")
 
 # requires PILlow. Use 'python -m pip install pillow' to install
 
@@ -7,6 +7,7 @@ import time
 import os
 import csv
 import math
+from hashlib import sha256
 try:
   from PIL import Image
 except:
@@ -21,6 +22,14 @@ ID_TITLESCREEN = 2
 ID_HEXFILE = 3
 ID_DATAFILE = 4
 ID_SAVEFILE = 5
+ID_VERSION = 6
+ID_DEVELOPER = 7
+ID_INFO = 8
+ID_LIKES = 9
+#ID_EEPROM_START = 10
+#ID_EEPROM_SIZE = 11
+#ID_EEPROM_FILE = 12
+ID_MAX = 10
 
 #Menu patcher data
 MenuButtonPatch = b'\x0f\x92\x0f\xb6\x8f\x93\x9f\x93\xef\x93\xff\x93\x80\x91\xcc\x01'+ \
@@ -216,13 +225,14 @@ with open(filename,"wb") as binfile:
         print("List Title                     Curr. Prev. Next  ProgSize DataSize SaveSize")
         print("---- ------------------------- ----- ----- ----- -------- -------- --------")
         for row in data:
-            while len(row) < 7: row.append('') #add missing cells
+            while len(row) < ID_MAX: row.append('') #add missing cells
             header = DefaultHeader()
             title = LoadTitleScreenData(fixPath(row[ID_TITLESCREEN]))
             program = LoadHexFileData(fixPath(row[ID_HEXFILE]))
             programsize = len(program)
             datafile = LoadDataFile(fixPath(row[ID_DATAFILE]))
             datasize = len(datafile)
+            id = sha256(program + datafile).digest()
             slotsize = ((programsize + datasize) >> 8) + 5
             programpage = currentpage + 5
             datapage    = programpage + (programsize >> 8)
@@ -246,6 +256,15 @@ with open(filename,"wb") as binfile:
             if datasize > 0:
                 header[17] = datapage >> 8
                 header[18] = datapage & 0xFF
+            header[25:57] = id
+            if programsize > 0:
+              stringdata = (row[ID_TITLE].encode('utf-8') + b'\0' + row[ID_VERSION].encode('utf-8') + b'\0' +
+                            row[ID_DEVELOPER].encode('utf-8') + b'\0' + row[ID_INFO].encode('utf-8') + b'\0')
+            else:
+              stringdata = row[ID_TITLE].encode('utf-8') + b'\0' + row[ID_INFO].encode('utf-8') + b'\0'
+            if len(stringdata) > 199:
+              stringdata = stringdata[:199]  
+            header[57:57 + len(stringdata)] = stringdata
             binfile.write(header)
             binfile.write(title)
             patchresult = PatchMenuButton()

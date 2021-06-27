@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-VERSION = " v1.09"
-VERSION_DATE =" Apr.2020 - Apr.2021"
+VERSION = " v1.10"
+VERSION_DATE =" Apr.2020 - Jun.2021"
 print("Arduboy Uploader GUI/FX activator/flasher" + VERSION + VERSION_DATE + " by Mr.Blinky running\n")
 
 from tkinter import filedialog
@@ -15,12 +15,16 @@ import time
 ## defaults ##
 fxActivator = "activator" in os.path.basename(sys.argv[0])
 fxFlasher = "flasher" in os.path.basename(sys.argv[0])
+ssd1309patch = "ssd1309" in os.path.basename(sys.argv[0])
 if len(sys.argv) > 1:
   if sys.argv[1].lower() == 'uploader' : fxActivator = False
   elif sys.argv[1].lower() == 'activator' : fxActivator = True
   elif sys.argv[1].lower() == 'flasher' :
     fxActivator = False
     fxFlasher = True
+  for arg in sys.argv:
+    if arg.lower() == 'ssd1309':
+      ssd1309patch = True
 path = os.path.dirname(os.path.abspath(sys.argv[0]))+os.sep
 if fxActivator:
   title = "FX Activator"
@@ -48,6 +52,8 @@ except:
   print("Use 'python -m pip install pyserial' from the commandline to install.")
   time.sleep(3)
   sys.exit()
+
+lcdBootProgram = b"\xD5\xF0\x8D\x14\xA1\xC8\x81\xCF\xD9\xF1\xAF\x20\x00"
 
 compatibledevices = [
  #Arduboy Leonardo
@@ -128,16 +134,19 @@ def bootloaderStart():
     return False
   if not bootloader_active:
     addLog("Selecting bootloader mode...")
-    bootloader = Serial(port,1200)
-    bootloader.close()
-    time.sleep(0.5)	
-    #wait for disconnect and reconnect in bootloader mode
-    while getComPort(False) == port :
-      time.sleep(0.1)
-      if bootloader_active: break        
-    while getComPort(False) is None : time.sleep(0.1)
-    port = getComPort(True)
-
+    try:
+      bootloader = Serial(port,1200)
+      bootloader.close()
+      time.sleep(0.5)	
+      #wait for disconnect and reconnect in bootloader mode
+      while getComPort(False) == port :
+        time.sleep(0.1)
+        if bootloader_active: break        
+      while getComPort(False) is None : time.sleep(0.1)
+      port = getComPort(True)
+    except:
+      addLogRed("Error accessing port {}".format(port))
+      return False
   log.insert(END, "Opening port..")
   log.see("end")
   root.update_idletasks()
@@ -235,6 +244,14 @@ def uploadHexfile():
           enableButtons()
           return
   
+  # check and apply patch for SSD1309
+  if applySsd1309patch.get():
+    lcdBootProgram_addr = flash_data.find(lcdBootProgram)
+    if lcdBootProgram_addr >= 0:
+      flash_data[lcdBootProgram_addr+2] = 0xE3;
+      flash_data[lcdBootProgram_addr+3] = 0xE3;
+      addLog("Found lcdBootProgram in hex file, upload will be patched for SSD1309 displays\n")
+  
   ## check  for data in catarina bootloader area ##  
   for i in range (256) :
     if flash_page_used[i] :
@@ -306,6 +323,16 @@ def flashImage():
   f = open(filename,"rb")
   flashdata = bytearray(f.read())
   f.close
+  
+  if applySsd1309patch.get():
+    addLog("Patching flash image for SSD1309 displays...\n")
+    lcdBootProgram_addr = 0
+    while lcdBootProgram_addr >= 0:
+      lcdBootProgram_addr = flashdata.find(lcdBootProgram, lcdBootProgram_addr)
+      if lcdBootProgram_addr >= 0:
+        flashdata[lcdBootProgram_addr+2] = 0xE3;
+        flashdata[lcdBootProgram_addr+3] = 0xE3;
+  
   if (len(flashdata) % PAGESIZE != 0):
     flashdata += b'\xFF' * (PAGESIZE - (len(flashdata) % PAGESIZE))
   pagenumber = 0
@@ -596,7 +623,10 @@ def viewEEPROM():
     s = '{:04X}: '.format(addr)
     for i in range (16):
       s += '{:02X} '.format(eepromdata[addr+i])
-    s += eepromdata[addr:addr+16].decode('cp1252')
+    for i in range (16):
+      if eepromdata[addr+i] < 32: s += '.'
+      else: s += eepromdata[addr+i:addr+i+1].decode('cp1252')
+    
     addLogBlack(s)
   addLogBlack(h)  
   enableButtons()
@@ -776,6 +806,7 @@ scrollbar.config(command = log.yview)
 #Menu checkmarks
 appVerify = BooleanVar()
 flashVerify  = BooleanVar()
+applySsd1309patch  = BooleanVar()
 
 #create menus
 mainmenu = Menu(root)
@@ -799,6 +830,8 @@ if not fxFlasher:
   appVerify.set(True)
 optionmenu.add_checkbutton(label="Verify flash data",onvalue=True,offvalue=False,variable=flashVerify)
 #flashVerify.set(True)
+optionmenu.add_checkbutton(label="Apply SSD1309 display patch",onvalue=True,offvalue=False,variable=applySsd1309patch)
+applySsd1309patch.set(ssd1309patch)
 optionmenu.add_command(label="Clear log",command=clearLog)
 mainmenu.add_cascade(label="File", menu = filemenu)
 mainmenu.add_cascade(label="Options", menu = optionmenu)

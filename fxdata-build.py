@@ -1,6 +1,6 @@
-#FX data build tool version 1.04 by Mr.Blinky May 2021 - Feb 2022
+#FX data build tool version 1.05 by Mr.Blinky May 2021 - Mar 2022
 
-VERSION = '1.04'
+VERSION = '1.05'
 
 import sys
 import os
@@ -10,12 +10,15 @@ def print(s):
   sys.stdout.write(s + '\n')
   sys.stdout.flush()
 
-print('FX data build tool version {} by Mr.Blinky May 2021 - Feb 2022'.format(VERSION))
+print('FX data build tool version {} by Mr.Blinky May 2021 - Mar 2022'.format(VERSION))
 
 bytes = bytearray()
 symbols = []
+header = []
 label = ''
+indent =''
 blkcom = False
+namespace = False
 try:
   toolspath = os.path.dirname(os.path.abspath(sys.argv[0]))
   sys.path.insert(0, toolspath)
@@ -33,7 +36,7 @@ def rawData(filename):
     return bytes
 
 def imageData(filename):
-  global path
+  global path, symbols
   filename = path + filename
 
   ## parse filename ## FILENAME_[WxH]_[S].[EXT]"
@@ -90,8 +93,6 @@ def imageData(filename):
   i = 4
   b = 0
   m = 0
-  #headerfile.write("constexpr uint8_t {}Width = {};\n".format(spriteName, spriteWidth))
-  #headerfile.write("constexpr uint8_t {}Height = {};\n".format(spriteName,spriteHeight))
   fy = spacing
   frames = 0
   for v in range(vframes):
@@ -118,10 +119,30 @@ def imageData(filename):
       frames += 1
       fx += spriteWidth + spacing
     fy += spriteHeight + spacing
-  #headerfile.write("constexpr uint8_t {}Width = {};\n".format(spriteName, spriteWidth))
-  #headerfile.write("constexpr uint8_t {}Height = {};\n".format(spriteName,spriteHeight))
-  #if frames > 1: headerfile.write("constexpr uint8_t {}Frames = {};\n".format(spriteName,frames))
+  label = symbols[-1][0]
+  if label.upper() == label:
+    writeHeader('{}constexpr uint16_t {}_WIDTH  = {};'.format(indent,label,spriteWidth))
+    writeHeader('{}constexpr uint16_t {}HEIGHT  = {};'.format(indent,label,spriteHeight))
+    if frames > 1: writeHeader('{}constexpr uint8_t  {}_FRAMES = {};'.format(indent,label,frames))
+  elif '_' in label:
+    writeHeader('{}constexpr uint16_t {}_width  = {};'.format(indent,label,spriteWidth))
+    writeHeader('{}constexpr uint16_t {}_height = {};'.format(indent,label,spriteHeight))
+    if frames > 1: writeHeader('{}constexpr uint8_t  {}_frames = {};'.format(indent,label,frames))
+  else:
+    writeHeader('{}constexpr uint16_t {}Width  = {};'.format(indent,label,spriteWidth))
+    writeHeader('{}constexpr uint16_t {}Height = {};'.format(indent,label,spriteHeight))
+    if frames > 1: writeHeader('{}constexpr uint8_t  {}Frames = {};'.format(indent,label,frames))
+  writeHeader('')
   return bytes
+
+def addLabel(label,length):
+  global symbols
+  symbols.append((label,length))
+  writeHeader('{}constexpr uint24_t {} = 0x{:06X};'.format(indent,label,length))
+
+def writeHeader(s):
+  global header
+  header.append(s)
 
 ################################################################################
 
@@ -150,6 +171,7 @@ for lineNr in range(len(lines)):
     if part[-1:] == ';' : part = part[:-1]
     if part[-1:] == '}' : part = part[:-1]
     if part[-1:] == ';' : part = part[:-1]
+    if part[-1:] == '.' : part = part[:-1]
     if part[-1:] == ',' : part = part[:-1]
     if part[-2:] == '[]': part = part[:-2]
     #handle comments
@@ -180,6 +202,17 @@ for lineNr in range(len(lines)):
       elif part == 'uint32_t': t = 4
       elif part == 'image_t' : t = 5
       elif part == 'raw_t'   : t = 6
+      #handle namespace
+      elif part == 'namespace':
+        namespace = True
+      elif namespace == True:
+        namespace = False      
+        writeHeader("namespace {}\n{{".format(part))
+        indent += '  '
+      elif part == 'namespace_end':
+        indent = indent[:-2]
+        writeHeader('}\n')
+        namespace = False
       #handle strings
       elif (part[:1] == "'") or (part[:1] == '"'):
         if  part[:1] == "'": part = part[1:part.rfind("'")]
@@ -191,7 +224,7 @@ for lineNr in range(len(lines)):
           sys.stderr.write('ERROR in line {}: unsupported string for type\n'.format(lineNr))
           sys.exit(-1)
       #handle values
-      elif part[:1].isnumeric():
+      elif part[:1].isnumeric() or (part[:1] == '-' and part[1:2].isnumeric()):
         n = int(part,0)
         if t == 4: bytes.append((n >> 24) & 0xFF)
         if t >= 3: bytes.append((n >> 16) & 0xFF)
@@ -205,7 +238,7 @@ for lineNr in range(len(lines)):
       elif part[:1].isalpha():
         for j in range(len(part)):
           if part[j] == '=':
-            symbols.append((label,len(bytes)))
+            addLabel(label,len(bytes))
             label = ''
             part = part[j+1:]
             parts.insert(i+1,part)
@@ -216,7 +249,7 @@ for lineNr in range(len(lines)):
             sys.stderr.write('ERROR in line {}: Bad label: {}\n'.format(lineNr,label))
             sys.exit(-1)
         if (label != '') and (i < len(parts) - 1) and (parts[i+1][:1] == '='):
-          symbols.append((label,len(bytes)))
+          addLabel(label,len(bytes))
           label = ''
         #handle symbol values
         if label != '':
@@ -243,8 +276,8 @@ with open(headerfilename,"w") as file:
   file.write('// Initialize FX hardware using  FX::begin(FX_DATA_PAGE); in the setup() function.\n\n')
   file.write('constexpr uint16_t FX_DATA_PAGE  = 0x{:04x};\n'.format(65536 - (len(bytes) + 255) // 256 ))
   file.write('constexpr uint24_t FX_DATA_BYTES = {};\n\n'.format(len(bytes)))
-  for symbol in symbols:
-    file.write('constexpr uint24_t {} = 0x{:06X};\n'.format(symbol[0],symbol[1]))
+  for line in header:
+    file.write(line + '\n')
   file.close()
 
 print("Saving {} bytes FX data to {}".format(len(bytes),datafilename))

@@ -1,6 +1,6 @@
-#FX data build tool version 1.05 by Mr.Blinky May 2021 - Mar 2022
+#FX data build tool version 1.06 by Mr.Blinky May 2021 - Mar 2022
 
-VERSION = '1.05'
+VERSION = '1.06'
 
 import sys
 import os
@@ -202,6 +202,8 @@ for lineNr in range(len(lines)):
       elif part == 'uint32_t': t = 4
       elif part == 'image_t' : t = 5
       elif part == 'raw_t'   : t = 6
+      elif part == 'String'  : t = 7
+      elif part == 'string'  : t = 7
       #handle namespace
       elif part == 'namespace':
         namespace = True
@@ -217,9 +219,10 @@ for lineNr in range(len(lines)):
       elif (part[:1] == "'") or (part[:1] == '"'):
         if  part[:1] == "'": part = part[1:part.rfind("'")]
         else:  part = part[1:part.rfind('"')]
-        if   t == 1: bytes += part.encode()
+        if   t == 1: bytes += part.encode('ANSI').decode('unicode_escape').encode('ANSI')
         elif t == 5: bytes += imageData(part)
         elif t == 6: bytes += rawData(part)
+        elif t == 7: bytes += part.encode('ANSI').decode('unicode_escape').encode('ANSI') + b'\x00'
         else:
           sys.stderr.write('ERROR in line {}: unsupported string for type\n'.format(lineNr))
           sys.exit(-1)

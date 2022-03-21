@@ -1,6 +1,6 @@
-#FX data build tool version 1.06 by Mr.Blinky May 2021 - Mar 2022
+#FX data build tool version 1.07 by Mr.Blinky May 2021 - Mar 2022
 
-VERSION = '1.06'
+VERSION = '1.07'
 
 import sys
 import os
@@ -131,7 +131,8 @@ def imageData(filename):
   else:
     writeHeader('{}constexpr uint16_t {}Width  = {};'.format(indent,label,spriteWidth))
     writeHeader('{}constexpr uint16_t {}Height = {};'.format(indent,label,spriteHeight))
-    if frames > 1: writeHeader('{}constexpr uint8_t  {}Frames = {};'.format(indent,label,frames))
+    if frames > 255: writeHeader('{}constexpr uint16_t  {}Frames = {};'.format(indent,label,frames))
+    elif frames > 1: writeHeader('{}constexpr uint8_t  {}Frames = {};'.format(indent,label,frames))
   writeHeader('')
   return bytes
 

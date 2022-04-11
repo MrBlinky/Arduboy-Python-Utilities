@@ -4,19 +4,16 @@ For Windows, Linux and OSX
 
 ### Dependencies
 
-* Requires Python 2.7.x or 3.7.x with PySerial installed.
+* Requires Python 3 with PySerial and Pillow installed.
 
 ### Installing dependencies
 
-* Download and install python 2.7.x from https://www.python.org/downloads/ if it is not already installed
+* Download and install python 3 from https://www.python.org/downloads/
 * Make sure the option 'Add python.exe to path' is checked on install options (Windows)
 * After install run 'python -m pip install pyserial' from command line. For OSX run 'easy_install pyserial' from terminal.
-
-Note:
-Not all utilities work with Python 3.7.x yet.
+* Also run 'python -m pip install pillow' from command line to install the pillow module. For OSX run 'easy_install pillow' from terminal.
 
 ## Uploader
-* Works with both Python 2.7.x **AND** 3.7.x
 * Requires pySerial: `python -m pip install pyserial`
 
 .Hex file and .Arduboy uploader for Arduboy
@@ -70,7 +67,6 @@ Erases the application/sketch startup page to keep the bootloader mode active in
 
 ## Flash cart builder
 
-* Works with both Python 2.7.x **AND** 3.7.x
 * Requires PILlow: `python -m pip install pillow`
 
 Builds a binary flash image from an index file and supporting resource files (.png images and .hex files).  Use the **flashcart-writer.py** script to write the output to a flash cart.  See the **example-flashcart\flashcart-index.csv** file for example syntax.
@@ -79,7 +75,6 @@ example: `python flashcart-builder.py example-flashcart\flashcart-index.csv`
 
 ## Flash cart writer
 
-* Works with both Python 2.7.x **AND** 3.7.x
 * Requires pySerial: `python -m pip install pyserial`
 
 Writes a binary flash image to external flash memory of Arduboy FX and Arduboy (clones) with added serial flash memory (Cathy3K v1.3+ bootloader required). Use the **flashcart-builder.py** script to build the image.
@@ -93,7 +88,6 @@ example: `python flashcart-writer.py -d datafile.bin`
 
 ## Flash cart backup
 
-* Works with both Python 2.7.x **AND** 3.7.x
 * Requires pySerial: `python -m pip install pyserial`
 
 Backup your existing flash cart to a binary image that can later be re-written to the Arduboy using the **flashcart-writer.py** script.
@@ -103,7 +97,6 @@ example: `python flashcart-backup.py`
 
 ## Image Converter
 
-* Works with both Python 2.7.x **AND** 3.7.x
 * Requires PILlow: `python -m pip install pillow`
 
 Converts .bmp or .png image files to C++ include file. Image width and height can be any size. Tilesheets and spritesheets with optional spacing can be converted by

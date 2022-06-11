@@ -49,6 +49,11 @@ MBP_millis_r31 = 30
 MBP_overflow_r30 = 56
 MBP_overflow_r31 = 58
 
+def alignSize(length, alignment):
+    n = alignment - length % alignment
+    if n == alignment: n = 0
+    return n
+
 def fixPath(filename):
      if os.sep == "\\": return filename.replace("/","\\")
      return filename.replace("\\","/")
@@ -131,7 +136,7 @@ def LoadDataFile(filename):
 
     with open(filename,"rb") as file:
         bytes = bytearray(file.read())
-        pagealign = bytearray(b'\xFF' * (256 - len(bytes) % 256))
+        pagealign = bytearray(b'\xFF' * alignSize(len(bytes), 256))
         return bytes + pagealign
 
 def LoadSaveFile(filename):
@@ -142,9 +147,7 @@ def LoadSaveFile(filename):
 
     with open(filename,"rb") as file:
         bytes = bytearray(file.read())
-        alignsize = 4096 - len(bytes) % 4096
-        if alignsize == 4096: alignsize = 0
-        pagealign = bytearray(b'\xFF' * alignsize)
+        pagealign = bytearray(b'\xFF' * alignSize(len(bytes), 4096))
         return bytes + pagealign
 
 def PatchMenuButton():
@@ -251,7 +254,7 @@ with open(filename,"wb") as binfile:
             programpage = currentpage + 5
             datapage    = programpage + (programsize >> 8)
             alignpage   = datapage + (datasize >> 8)
-            alignsize   = (16 - alignpage % 16) * 256 if savesize > 0 else 0
+            alignsize   = alignSize(alignpage, 16) * 256 if savesize > 0 else 0
             slotsize    = ((programsize + datasize + alignsize + savesize) >> 8) + 5
             savepage    = alignpage + (alignsize >> 8)
             nextpage += slotsize

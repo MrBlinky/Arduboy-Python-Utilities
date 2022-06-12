@@ -49,6 +49,11 @@ MBP_millis_r31 = 30
 MBP_overflow_r30 = 56
 MBP_overflow_r31 = 58
 
+def alignSize(length, alignment):
+    n = alignment - length % alignment
+    if n == alignment: n = 0
+    return n
+
 def fixPath(filename):
      if os.sep == "\\": return filename.replace("/","\\")
      return filename.replace("\\","/")
@@ -131,7 +136,18 @@ def LoadDataFile(filename):
 
     with open(filename,"rb") as file:
         bytes = bytearray(file.read())
-        pagealign = bytearray(b'\xFF' * (256 - len(bytes) % 256))
+        pagealign = bytearray(b'\xFF' * alignSize(len(bytes), 256))
+        return bytes + pagealign
+
+def LoadSaveFile(filename):
+    if not os.path.isabs(filename):
+      filename = path + filename
+    if not os.path.isfile(filename) :
+        return bytearray()
+
+    with open(filename,"rb") as file:
+        bytes = bytearray(file.read())
+        pagealign = bytearray(b'\xFF' * alignSize(len(bytes), 4096))
         return bytes + pagealign
 
 def PatchMenuButton():
@@ -232,10 +248,15 @@ with open(filename,"wb") as binfile:
             programsize = len(program)
             datafile = LoadDataFile(fixPath(row[ID_DATAFILE]))
             datasize = len(datafile)
+            savefile = LoadSaveFile(fixPath(row[ID_SAVEFILE]))
+            savesize = len(savefile)
             id = sha256(program + datafile).digest()
-            slotsize = ((programsize + datasize) >> 8) + 5
             programpage = currentpage + 5
             datapage    = programpage + (programsize >> 8)
+            alignpage   = datapage + (datasize >> 8)
+            alignsize   = alignSize(alignpage, 16) * 256 if savesize > 0 else 0
+            slotsize    = ((programsize + datasize + alignsize + savesize) >> 8) + 5
+            savepage    = alignpage + (alignsize >> 8)
             nextpage += slotsize
             header[7] = int(row[ID_LIST]) #list number
             header[8] = previouspage >> 8
@@ -253,9 +274,17 @@ with open(filename,"wb") as binfile:
                     program[0x15] = 0x95
                     program[0x16] = datapage >> 8
                     program[0x17] = datapage & 0xFF
+                if savesize > 0:
+                    program[0x18] = 0x18
+                    program[0x19] = 0x95
+                    program[0x1a] = savepage >> 8
+                    program[0x1b] = savepage & 0xFF
             if datasize > 0:
                 header[17] = datapage >> 8
                 header[18] = datapage & 0xFF
+            if savesize > 0:
+                header[19] = savepage >> 8
+                header[20] = savepage & 0xFF
             header[25:57] = id
             if programsize > 0:
               stringdata = (row[ID_TITLE].encode('utf-8') + b'\0' + row[ID_VERSION].encode('utf-8') + b'\0' +
@@ -270,10 +299,12 @@ with open(filename,"wb") as binfile:
             patchresult = PatchMenuButton()
             binfile.write(program)
             binfile.write(datafile)
+            binfile.write(bytearray(b'\xFF' * alignsize))
+            binfile.write(savefile)
             if programsize == 0:
               print("{:4} {:25} {:5} {:5} {:5}".format(row[ID_LIST],row[ID_TITLE],currentpage,previouspage,nextpage))
             else:
-              print("{:4}  {:24} {:5} {:5} {:5} {:8} {:8} {:8} {}".format(row[ID_LIST],row[ID_TITLE][:24],currentpage,previouspage,nextpage,programsize,datasize,0,patchresult))
+              print("{:4}  {:24} {:5} {:5} {:5} {:8} {:8} {:8} {}".format(row[ID_LIST],row[ID_TITLE][:24],currentpage,previouspage,nextpage,programsize,datasize,savesize,patchresult))
             previouspage = currentpage
             currentpage = nextpage
             if programsize > 0:

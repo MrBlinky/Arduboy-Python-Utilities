@@ -1,4 +1,4 @@
-print("\nArduboy Flashcart image builder v1.08 by Mr.Blinky Jun 2018 - Jun 2021\n")
+print("\nArduboy Flashcart image builder v1.09 by Mr.Blinky Jun 2018 - Jun 2022\n")
 
 # requires PILlow. Use 'python -m pip install pillow' to install
 
@@ -26,10 +26,12 @@ ID_VERSION = 6
 ID_DEVELOPER = 7
 ID_INFO = 8
 ID_LIKES = 9
-#ID_EEPROM_START = 10
-#ID_EEPROM_SIZE = 11
-#ID_EEPROM_FILE = 12
-ID_MAX = 10
+ID_WEBSITE = 10
+ID_SOURCE = 11
+ID_EEPROM_START = 12
+ID_EEPROM_SIZE = 13
+ID_EEPROM_FILE = 14
+ID_MAX = 15
 
 #Menu patcher data
 MenuButtonPatch = b'\x0f\x92\x0f\xb6\x8f\x93\x9f\x93\xef\x93\xff\x93\x80\x91\xcc\x01'+ \
@@ -102,30 +104,28 @@ def LoadHexFileData(filename):
     f = open(filename,"r")
     records = f.readlines()
     f.close()
-    bytes = bytearray(b'\xFF' * 32768)
+    bytes = bytearray(b'\xFF' * 29 * 1024)
     flash_end = 0
     for rcd in records :
-        if rcd == ":00000001FF" : break
         if rcd[0] == ":" :
             rcd_len  = int(rcd[1:3],16)
             rcd_typ  = int(rcd[7:9],16)
             rcd_addr = int(rcd[3:7],16)
-            rcd_sum  = int(rcd[9+rcd_len*2:11+rcd_len*2],16)
+            checksum = int(rcd[9+rcd_len*2:11+rcd_len*2],16)
             if (rcd_typ == 0) and (rcd_len > 0) :
                 flash_addr = rcd_addr
-                checksum = rcd_sum
                 for i in range(1,9+rcd_len*2, 2) :
                     byte = int(rcd[i:i+2],16)
-                    checksum = (checksum + byte) & 0xFF
+                    checksum += byte
                     if i >= 9:
                         bytes[flash_addr] = byte
                         flash_addr += 1
-                        if flash_addr > flash_end:
-                            flash_end = flash_addr
-                if checksum != 0 :
+                if flash_addr > flash_end:
+                    flash_end = flash_addr
+                if checksum  & 0xFF != 0 :
                     print("Error: Hex file '{}' contains errors.".format(filename))
                     DelayedExit()
-    flash_end = int((flash_end + 255) / 256) * 256
+    flash_end = (flash_end + 255) & 0xFF00
     return bytes[0:flash_end]
 
 def LoadDataFile(filename):
@@ -235,12 +235,15 @@ Sketches = 0
 filename = path + os.path.basename(csvfile).lower().replace("-index","").replace(".csv","-image.bin")
 with open(filename,"wb") as binfile:
     with open(csvfile,"r") as file:
-        data = csv.reader(file, quotechar='"', delimiter = ";")
-        next(data,None)
+        sep = ';'
+        head = file.readline()
+        if head.count(',') > head.count(';') : sep = ','
+        data = csv.reader(file, quotechar='"', delimiter = sep)
         print("Building: {}\n".format(filename))
         print("List Title                     Curr. Prev. Next  ProgSize DataSize SaveSize")
         print("---- ------------------------- ----- ----- ----- -------- -------- --------")
         for row in data:
+            if len(row) == 0: continue #ignore blank lines
             while len(row) < ID_MAX: row.append('') #add missing cells
             header = DefaultHeader()
             title = LoadTitleScreenData(fixPath(row[ID_TITLESCREEN]))
@@ -265,7 +268,10 @@ with open(filename,"wb") as binfile:
             header[11] = nextpage & 0xFF
             header[12] = slotsize >> 8
             header[13] = slotsize & 0xFF
-            header[14] = programsize >> 7 #program size in 128 byte pages
+            if program[-128:] == b'\xFF' * 128: #don't flash last unused 128 bytes page
+                header[14] = (programsize >> 7) - 1
+            else:
+                header[14] = programsize >> 7 #program size in 128 byte pages
             if programsize > 0:
                 header[15] = programpage >> 8
                 header[16] = programpage & 0xFF
@@ -274,21 +280,18 @@ with open(filename,"wb") as binfile:
                     program[0x15] = 0x95
                     program[0x16] = datapage >> 8
                     program[0x17] = datapage & 0xFF
+                    header[17] = datapage >> 8
+                    header[18] = datapage & 0xFF
                 if savesize > 0:
                     program[0x18] = 0x18
                     program[0x19] = 0x95
                     program[0x1a] = savepage >> 8
                     program[0x1b] = savepage & 0xFF
-            if datasize > 0:
-                header[17] = datapage >> 8
-                header[18] = datapage & 0xFF
-            if savesize > 0:
-                header[19] = savepage >> 8
-                header[20] = savepage & 0xFF
-            header[25:57] = id
-            if programsize > 0:
-              stringdata = (row[ID_TITLE].encode('utf-8') + b'\0' + row[ID_VERSION].encode('utf-8') + b'\0' +
-                            row[ID_DEVELOPER].encode('utf-8') + b'\0' + row[ID_INFO].encode('utf-8') + b'\0')
+                    header[19] = savepage >> 8
+                    header[20] = savepage & 0xFF
+                header[25:57] = id
+                stringdata = (row[ID_TITLE].encode('utf-8') + b'\0' + row[ID_VERSION].encode('utf-8') + b'\0' +
+                              row[ID_DEVELOPER].encode('utf-8') + b'\0' + row[ID_INFO].encode('utf-8') + b'\0')
             else:
               stringdata = row[ID_TITLE].encode('utf-8') + b'\0' + row[ID_INFO].encode('utf-8') + b'\0'
             if len(stringdata) > 199:
@@ -311,6 +314,7 @@ with open(filename,"wb") as binfile:
                 Sketches += 1
             else:
                 TitleScreens += 1
+        binfile.write(b'\xFF' * 256) #use blank header to signal end of FX file system
         print("---- ------------------------- ----- ----- ----- -------- -------- --------")
         print("                                Page  Page  Page    Bytes    Bytes    Bytes")
                 

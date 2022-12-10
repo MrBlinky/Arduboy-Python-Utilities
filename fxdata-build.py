@@ -1,4 +1,4 @@
-#FX data build tool version 1.07 by Mr.Blinky May 2021 - Mar 2022
+#FX data build tool version 1.08 by Mr.Blinky May 2021 - Dec 2022
 
 VERSION = '1.07'
 
@@ -48,20 +48,15 @@ def imageData(filename):
   #get width and height from filename
   i = lastElement
   while i > 0:
-    if "x" in elements[i]:
-      spriteWidth = int(elements[i].split("x")[0])
-      spriteHeight = int(elements[i].split("x")[1])
-      if i < lastElement:
+    subElements = list(filter(None,elements[i].split('x')))
+    if len(subElements) == 2 and subElement[0].isnumeric() and subElement[1].isnumeric():
+      spriteWidth = int(subElement[0])
+      spriteHeight = int(subElement[1])
+      if i < lastElement and elements[i+1].isnumeric():
         spacing = int(elements[i+1])
       break
     else: i -= 1
-  else:
-    i = lastElement
-  #get sprite name (may contain underscores) from filename
-  name = elements[0]
-  for j in range(1,i):
-    name += "_" + elements[j]
-  spriteName = name.replace("-","_")
+
   #load image
   img = Image.open(filename).convert("RGBA")
   pixels = list(img.getdata())

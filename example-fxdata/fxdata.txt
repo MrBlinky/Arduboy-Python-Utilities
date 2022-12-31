@@ -12,6 +12,9 @@
  The .bin file can also be uploaded to FX flash chip using the flash-writer.py
  Python command line script using the -d switch.
  
+ Other FX resource files (or parts of it) may be included by using the include
+ directive followed by a filename.
+
  Data types:
   
  int8_t, uint8_t   values will be stored as 8-bit bytes (unsigned char)

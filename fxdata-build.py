@@ -1,6 +1,6 @@
-#FX data build tool version 1.09 by Mr.Blinky May 2021 - Dec 2022
+#FX data build tool version 1.10 by Mr.Blinky May 2021 - Jan 2022
 
-VERSION = '1.09'
+VERSION = '1.10'
 
 import sys
 import os
@@ -10,7 +10,7 @@ def print(s):
   sys.stdout.write(s + '\n')
   sys.stdout.flush()
 
-print('FX data build tool version {} by Mr.Blinky May 2021 - dec 2022'.format(VERSION))
+print('FX data build tool version {} by Mr.Blinky May 2021 - Jan 2022'.format(VERSION))
 
 bytes = bytearray()
 symbols = []
@@ -38,6 +38,7 @@ def rawData(filename):
 
 def includeFile(filename):
   global path
+  print("Including file {}".format(path + filename))
   with open(path + filename,"r") as file:
     lines = file.readlines()
     file.close()
@@ -164,7 +165,8 @@ with open(filename,"r") as file:
   file.close()
 
 print("Building FX data using {}".format(filename))
-for lineNr in range(len(lines)):
+lineNr = 0
+while lineNr < len(lines):
   parts = [p for p in re.split("([ ,]|[\\\"'].*[\\\"'])", lines[lineNr]) if p.strip() and p != ',']
   for i in range (len(parts)):
     part = parts[i]
@@ -279,7 +281,7 @@ for lineNr in range(len(lines)):
       elif len(part) > 0:
         sys.stderr.write('ERROR unable to parse {} in element: {}\n'.format(part,str(parts)))
         sys.exit(-1)
-
+  lineNr += 1
 print("Saving FX data header file {}".format(headerfilename))
 with open(headerfilename,"w") as file:
   file.write('#pragma once\n\n')

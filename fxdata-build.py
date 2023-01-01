@@ -1,4 +1,4 @@
-#FX data build tool version 1.10 by Mr.Blinky May 2021 - Jan 2022
+#FX data build tool version 1.10 by Mr.Blinky May 2021 - Jan 2023
 
 VERSION = '1.10'
 
@@ -10,7 +10,7 @@ def print(s):
   sys.stdout.write(s + '\n')
   sys.stdout.flush()
 
-print('FX data build tool version {} by Mr.Blinky May 2021 - Jan 2022'.format(VERSION))
+print('FX data build tool version {} by Mr.Blinky May 2021 - Jan 2023'.format(VERSION))
 
 bytes = bytearray()
 symbols = []

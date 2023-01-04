@@ -1,6 +1,6 @@
-#FX data build tool version 1.10 by Mr.Blinky May 2021 - Jan 2023
+#FX data build tool version 1.11 by Mr.Blinky May 2021 - Jan 2023
 
-VERSION = '1.10'
+VERSION = '1.11'
 
 import sys
 import os
@@ -230,10 +230,10 @@ while lineNr < len(lines):
         if include == True:
           lines[lineNr+1:lineNr+1] = includeFile(part)      
           include = False
-        elif t == 1: bytes += part.encode('ANSI').decode('unicode_escape').encode('ANSI')
+        elif t == 1: bytes += part.encode('utf-8').decode('unicode_escape').encode('utf-8')
         elif t == 5: bytes += imageData(part)
         elif t == 6: bytes += rawData(part)
-        elif t == 7: bytes += part.encode('ANSI').decode('unicode_escape').encode('ANSI') + b'\x00'
+        elif t == 7: bytes += part.encode('utf-8').decode('unicode_escape').encode('utf-8') + b'\x00'
         else:
           sys.stderr.write('ERROR in line {}: unsupported string for type\n'.format(lineNr))
           sys.exit(-1)

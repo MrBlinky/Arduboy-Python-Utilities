@@ -1,10 +1,37 @@
-#FX data build tool version 1.11 by Mr.Blinky May 2021 - Jan 2023
+#FX data build tool version 1.12 by Mr.Blinky May 2021 - Jan 2023
 
-VERSION = '1.11'
+VERSION = '1.12'
 
 import sys
 import os
 import re
+
+constants = [
+    #normal bitmap modes
+    ("dbmNormal",    0x00),
+    ("dbmOverwrite", 0x00),
+    ("dbmWhite",     0x01),
+    ("dbmReverse",   0x08),
+    ("dbmBlack",     0x0D),
+    ("dbmInvert",    0x02),
+    ("dbmMasked",    0x10),
+    #bitmap modes for last bitmap in a frame: (dbmNormal | dbmEnd)
+    ("dbmNormal_end",    0x40),
+    ("dbmOverwrite_end", 0x40),
+    ("dbmWhite_end",     0x41),
+    ("dbmReverse_end",   0x48),
+    ("dbmBlack_end",     0x4D),
+    ("dbmInvert_end",    0x42),
+    ("dbmMasked_end",    0x50),
+    #bitmap modes for last bitmap of the last frame (dbmNormal | dbmLast)
+    ("dbmNormal_last",    0x80),
+    ("dbmOverwrite_last", 0x80),
+    ("dbmWhite_last",     0x81),
+    ("dbmReverse_last",   0x88),
+    ("dbmBlack_last",     0x8D),
+    ("dbmInvert_last",    0x82),
+    ("dbmMasked_last",    0x90),
+    ]
 
 def print(s):
   sys.stdout.write(s + '\n')
@@ -265,6 +292,16 @@ while lineNr < len(lines):
         if (label != '') and (i < len(parts) - 1) and (parts[i+1][:1] == '='):
           addLabel(label,len(bytes))
           label = ''
+        #handle included constants
+        if label != '':
+          for symbol in constants:
+            if symbol[0] == label:
+              if t == 4: bytes.append((symbol[1] >> 24) & 0xFF)
+              if t >= 3: bytes.append((symbol[1] >> 16) & 0xFF)
+              if t >= 2: bytes.append((symbol[1] >> 8) & 0xFF)
+              if t >= 1: bytes.append((symbol[1] >> 0) & 0xFF)
+              label = ''
+              break
         #handle symbol values
         if label != '':
           for symbol in symbols:

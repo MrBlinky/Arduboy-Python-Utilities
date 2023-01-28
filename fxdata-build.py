@@ -1,10 +1,11 @@
-#FX data build tool version 1.13 by Mr.Blinky May 2021 - Jan 2023
+#FX data build tool version 1.14 by Mr.Blinky May 2021 - Jan 2023
 
-VERSION = '1.13'
+VERSION = '1.14'
 
 import sys
 import os
 import re
+import platform
 
 constants = [
     #normal bitmap modes
@@ -52,7 +53,7 @@ def print(s):
   sys.stdout.write(s + '\n')
   sys.stdout.flush()
 
-print('FX data build tool version {} by Mr.Blinky May 2021 - Jan 2023'.format(VERSION))
+print('FX data build tool version {} by Mr.Blinky May 2021 - Jan 2023\nUsing Python version {}'.format(VERSION,platform.python_version()))
 
 bytes = bytearray()
 symbols = []
@@ -66,7 +67,8 @@ try:
   toolspath = os.path.dirname(os.path.abspath(sys.argv[0]))
   sys.path.insert(0, toolspath)
   from PIL import Image
-except:
+except Exception as e:
+  sys.stderr.write(str(e) + "\n")
   sys.stderr.write("PILlow python module not found or wrong version.\n")
   sys.stderr.write("Make sure the correct module is installed or placed at {}\n".format(toolspath))
   sys.exit(-1)

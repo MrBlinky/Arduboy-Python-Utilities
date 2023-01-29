@@ -1,4 +1,5 @@
-print "\nArduboy EEPROM erase v1.0 by Mr.Blinky May 2018"
+#!/usr/bin/env python3
+print("\nArduboy EEPROM erase v1.0 by Mr.Blinky May 2018")
 
 #requires pyserial to be installed. Use "pip install pyserial" on commandline
 
@@ -27,7 +28,7 @@ bootloader_active = False
 
 def delayedExit():
   time.sleep(2)
-  #raw_input()  
+  #raw_input()
   sys.exit()
 
 def getComPort(verbose):
@@ -38,9 +39,9 @@ def getComPort(verbose):
       if  vidpid in device[2]:
         port=device[0]
         bootloader_active = (compatibledevices.index(vidpid) & 1) == 0
-        if verbose : print "Found {} at port {}".format(device[1],port)
+        if verbose : print("Found {} at port {}".format(device[1],port))
         return port
-  if verbose : print "Arduboy not found."
+  if verbose : print("Arduboy not found.")
 
 def bootloaderStart():
   global bootloader
@@ -48,33 +49,33 @@ def bootloaderStart():
   port = getComPort(True)
   if port is None : delayedExit()
   if not bootloader_active:
-    print "Selecting bootloader mode..."
+    print("Selecting bootloader mode...")
     bootloader = Serial(port,1200)
     bootloader.close()
     #wait for disconnect and reconnect in bootloader mode
     while getComPort(False) == port :
       time.sleep(0.1)
-      if bootloader_active: break        
+      if bootloader_active: break
     while getComPort(False) is None : time.sleep(0.1)
     port = getComPort(True)
-  
-  time.sleep(0.1)  
+
+  time.sleep(0.1)
   bootloader = Serial(port,57600)
-  
+
 def bootloaderExit():
   global bootloader
-  bootloader.write("E")
+  bootloader.write(b"E")
   bootloader.read(1)
-  
+
 ################################################################################
-  
+
 bootloaderStart()
-print "Erasing EEPROM data..."
-bootloader.write("A\x00\x00")
+print("Erasing EEPROM data...")
+bootloader.write(b"A\x00\x00")
 bootloader.read(1)
-bootloader.write("B\x04\x00E")
-bootloader.write(bytearray("\xFF" * 1024))
+bootloader.write(b"B\x04\x00E")
+bootloader.write(b"\xFF" * 1024)
 bootloader.read(1)
 bootloaderExit()
-print "Erase complete."
+print("Erase complete.")
 delayedExit()

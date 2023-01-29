@@ -55,22 +55,22 @@ def bootloaderStart():
     #wait for disconnect and reconnect in bootloader mode
     while getComPort(False) == port :
       time.sleep(0.1)
-      if bootloader_active: break        
+      if bootloader_active: break
     while getComPort(False) is None : time.sleep(0.1)
     port = getComPort(True)
-  
-  time.sleep(0.1)	
+
+  time.sleep(0.1)
   bootloader = Serial(port,57600)
-  
+
 def bootloaderExit():
   global bootloader
   bootloader.write(b"E")
   bootloader.read(1)
   bootloader.close()
-  
+
 ################################################################################
 
-IncludeBootloader = "bootloader" in sys.argv[0]
+IncludeBootloader = "bootloader" in sys.argv
 
 bootloaderStart()
 filename = time.strftime("sketch-backup-%Y%m%d-%H%M%S.bin", time.localtime())
@@ -78,9 +78,11 @@ print("Reading sketch...")
 bootloader.write(b"A\x00\x00")
 bootloader.read(1)
 if IncludeBootloader:
+  print("Including bootloader")
   bootloader.write(b"g\x80\x00F")
   backupdata = bytearray(bootloader.read(0x8000))
 else:
+  print("Excluding bootloader")
   bootloader.write(b"g\x70\x00F")
   backupdata = bytearray(bootloader.read(0x7000))
 print('saving sketch to "{}"'.format(filename))

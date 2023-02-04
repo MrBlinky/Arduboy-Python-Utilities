@@ -7,7 +7,7 @@ print("\nArduboy python uploader v1.2 by Mr.Blinky April 2018 - Jan 2019")
 #rename this script filename to 'uploader-1309.py' to patch uploads on the fly
 #for use with SSD1309 displays
 
-#rename this script filename to 'uploader-micro.py' to patch RX and TX LED 
+#rename this script filename to 'uploader-micro.py' to patch RX and TX LED
 #polarity on the fly for use with Arduino / Genuino Micro
 
 #rename this script filename to 'uploader-micro-1309.py' to apply both patches
@@ -47,7 +47,7 @@ flash_page_used  = [False] * 256
 
 def delayedExit():
   time.sleep(3)
-  #raw_input()  
+  #raw_input()
   sys.exit()
 
 def getComPort(verbose):
@@ -75,18 +75,18 @@ def bootloaderStart():
     #wait for disconnect and reconnect in bootloader mode
     while getComPort(False) == port :
       time.sleep(0.1)
-      if bootloader_active: break        
+      if bootloader_active: break
     while getComPort(False) is None : time.sleep(0.1)
     port = getComPort(True)
-  
-  time.sleep(0.1)	
+
+  time.sleep(0.1)
   bootloader = Serial(port,57600)
-  
+
 def bootloaderExit():
   global bootloader
   bootloader.write(b"E")
   bootloader.read(1)
-  
+
 ################################################################################
 
 if len(sys.argv) != 2 :
@@ -99,7 +99,7 @@ filename = sys.argv[1]
 if not os.path.isfile(filename) :
   print("File not found. [{}]".format(filename))
   delayedExit()
-  
+
 #if file is (.arduboy) zipfile, extract hex file
 try:
   zip = zipfile.ZipFile(filename)
@@ -116,34 +116,43 @@ except:
   hexfile = filename
   print('\nLoading "{}"'.format(os.path.basename(hexfile)))
   tempfile = False
-  
-f = open(hexfile,"r")
-records = f.readlines()
-f.close()
-if tempfile == True : os.remove(hexfile)
 
-for rcd in records :
-  if rcd == ":00000001FF" : break
-  if rcd[0] == ":" :
-    rcd_len  = int(rcd[1:3],16)
-    rcd_typ  = int(rcd[7:9],16)
-    rcd_addr = int(rcd[3:7],16)
-    rcd_sum  = int(rcd[9+rcd_len*2:11+rcd_len*2],16)
-    if (rcd_typ == 0) and (rcd_len > 0) :
-      flash_addr = rcd_addr
-      flash_page_used[int(rcd_addr / 128)] = True
-      flash_page_used[int((rcd_addr + rcd_len - 1) / 128)] = True
-      checksum = rcd_sum
-      for i in range(1,9+rcd_len*2, 2) :
-        byte = int(rcd[i:i+2],16)
-        checksum = (checksum + byte) & 0xFF
-        if i >= 9:
-          flash_data[flash_addr] = byte
-          flash_addr += 1
-      if checksum != 0 :
-        print("Hex file contains errors. upload aborted.")
-        delayedExit()
-        
+if hexfile.endswith(".hex"):
+  f = open(hexfile,"r")
+  records = f.readlines()
+  f.close()
+  if tempfile == True : os.remove(hexfile)
+
+  for rcd in records :
+    if rcd == ":00000001FF" : break
+    if rcd[0] == ":" :
+      rcd_len  = int(rcd[1:3],16)
+      rcd_typ  = int(rcd[7:9],16)
+      rcd_addr = int(rcd[3:7],16)
+      rcd_sum  = int(rcd[9+rcd_len*2:11+rcd_len*2],16)
+      if (rcd_typ == 0) and (rcd_len > 0) :
+        flash_addr = rcd_addr
+        flash_page_used[int(rcd_addr / 128)] = True
+        flash_page_used[int((rcd_addr + rcd_len - 1) / 128)] = True
+        checksum = rcd_sum
+        for i in range(1,9+rcd_len*2, 2) :
+          byte = int(rcd[i:i+2],16)
+          checksum = (checksum + byte) & 0xFF
+          if i >= 9:
+            flash_data[flash_addr] = byte
+            flash_addr += 1
+        if checksum != 0 :
+          print("Hex file contains errors. upload aborted.")
+          delayedExit()
+elif hexfile.endswith(".bin"):
+  binfile = hexfile
+  with open(binfile, mode='rb') as file:
+      flash_data = file.read()
+  for i in range(os.path.getsize(binfile) // 128):
+    flash_page_used[i] = True
+else:
+  raise Exception("Unknown file format")
+
 ## Apply patch for SSD1309 displays if script name contains 1309 ##
 if os.path.basename(sys.argv[0]).find("1309") >= 0:
   lcdBootProgram_addr = flash_data.find(lcdBootProgram)
@@ -169,15 +178,15 @@ if os.path.basename(sys.argv[0]).lower().find("micro") >= 0:
             flash_data[i] = 0x80
         elif flash_data[i:i+4] == b'\x84\xe2\x8b\xb9' : # Arduboy core init TXLED port
             flash_data[i+1] = 0xE0
-            
-## check  for data in catarina bootloader area ##  
+
+## check for data in catarina bootloader area ##
 for i in range (256) :
   if flash_page_used[i] :
     flash_page_count += 1
     if i >= 224 :
       caterina_overwrite = True
 
-bootloaderStart()      
+bootloaderStart()
 #test if bootloader can and will be overwritten by hex file
 bootloader.write(b"V") #get bootloader software version
 if bootloader.read(2) == b"10" : #original caterina 1.0 bootloader
@@ -186,7 +195,7 @@ if bootloader.read(2) == b"10" : #original caterina 1.0 bootloader
     print("\nThis upload will most likely corrupt the bootloader. Upload aborted.")
     bootloaderExit()
     delayedExit()
-      
+
 ## Flash ##
 print("\nFlashing {} bytes. ({} flash pages)".format(flash_page_count * 128, flash_page_count))
 for i in range (256) :
@@ -199,7 +208,7 @@ for i in range (256) :
     flash_page += 1
     if flash_page % 4 == 0:
       sys.stdout.write("#")
-      
+
 ## Verify ##
 print("\n\nVerifying {} bytes. ({} flash pages)".format(flash_page_count * 128, flash_page_count))
 for i in range (256) :
@@ -215,5 +224,5 @@ for i in range (256) :
     if flash_page % 4 == 0:
       sys.stdout.write("#")
 print("\n\nUpload success!!")
-bootloaderExit()      
+bootloaderExit()
 delayedExit()

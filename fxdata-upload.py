@@ -1,6 +1,6 @@
 #
 
-VERSION = '1.18'
+VERSION = '1.19'
 
 import sys
 import os
@@ -174,7 +174,7 @@ def writeFlash(pagenumber, flashdata):
     else:  
       bootloader.write(b"x\xC0") #RGB LED OFF, buttons disabled
     bootloader.read(1)
-    sys.stdout.write("\rWriting block {}/{}".format(block + 1,blocks))
+    sys.stdout.write("\rWriting block {}/{}  ".format(block + 1,blocks))
     sys.stdout.flush()
     blockaddr = pagenumber + block * BLOCKSIZE // PAGESIZE
     blocklen = BLOCKSIZE

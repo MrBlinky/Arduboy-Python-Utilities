@@ -46,8 +46,12 @@ flash_page_count = 0
 flash_page_used  = [False] * 256
 
 def delayedExit():
-  time.sleep(3)
-  #raw_input()
+  print("Delay: ", end="")
+  for t in range(3):
+    print(f"{3-t}...", end="", flush=True)
+    time.sleep(1)
+  print("0.")
+  # input("Press Enter to quit: ")
   sys.exit()
 
 def getComPort(verbose):
@@ -148,7 +152,9 @@ elif hexfile.endswith(".bin"):
   binfile = hexfile
   with open(binfile, mode='rb') as file:
       flash_data = file.read()
-  for i in range(os.path.getsize(binfile) // 128):
+  pages = (len(flash_data) + 127) // 128
+  flash_data = flash_data.ljust(pages * 128, b'\xff')
+  for i in range(pages):
     flash_page_used[i] = True
 else:
   raise Exception("Unknown file format")

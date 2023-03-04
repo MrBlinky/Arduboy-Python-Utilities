@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-VERSION = " v1.10"
-VERSION_DATE =" Apr.2020 - Jun.2021"
+VERSION = " v1.12"
+VERSION_DATE =" Apr.2020 - Mar.2023"
 print("Arduboy Uploader GUI/FX activator/flasher" + VERSION + VERSION_DATE + " by Mr.Blinky running\n")
 
 from tkinter import filedialog
@@ -510,7 +510,7 @@ def flashDevData():
   #write complete  
   bootloader.write(b"x\x40")#RGB LED OFF, buttons enabled
   bootloader.read(1)
-  bootloaderExit()  # Exit bootloader menu and start sketch
+  bootloader.close()
   addLogGreen("\nUploaded development data successfully!!\n")
   log.insert(END,"Please use the following line in your ")
   log.insert(END,"fxdata.h",'black')

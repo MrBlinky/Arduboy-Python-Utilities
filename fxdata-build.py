@@ -1,6 +1,6 @@
-#FX data build tool version 1.14 by Mr.Blinky May 2021 - Jan 2023
+#FX data build tool version 1.15 by Mr.Blinky May 2021 - Mar.2023
 
-VERSION = '1.14'
+VERSION = '1.15'
 
 import sys
 import os
@@ -214,7 +214,7 @@ with open(filename,"r") as file:
 print("Building FX data using {}".format(filename))
 lineNr = 0
 while lineNr < len(lines):
-  parts = [p for p in re.split("([ ,]|[\\\"'].*[\\\"'])", lines[lineNr]) if p.strip() and p != ',']
+  parts = [p for p in re.split("([ ,]|[\\'].*[\\'])", lines[lineNr]) if p.strip() and p != ',']
   for i in range (len(parts)):
     part = parts[i]
     #strip unwanted chars

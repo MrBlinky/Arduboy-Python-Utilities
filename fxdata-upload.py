@@ -1,6 +1,6 @@
-#
 
-VERSION = '1.19'
+VERSION = '1.20'
+title ="Arduboy FX data uploader v" + VERSION + " by Mr.Blinky Feb.2022-Mar.2023"
 
 import sys
 import os
@@ -194,19 +194,22 @@ def writeFlash(pagenumber, flashdata):
       bootloader.write(bytearray([ord("g"), (blocklen >> 8) & 0xFF, blocklen & 0xFF,ord("C")]))
       if bootloader.read(blocklen) != flashdata[block * BLOCKSIZE : block * BLOCKSIZE + blocklen]:
         sys.stderr.write(" verify failed!\n\nWrite aborted.")
-        bootloaderExit()
+        bootloader.write(b"x\x40")#RGB LED off, buttons enabled
+        bootloader.read(1)
         sys.exit(-1)
   
   #write complete  
   bootloader.write(b"x\x44")#RGB LED GREEN, buttons enabled
   bootloader.read(1)
   time.sleep(0.5)    
-  bootloaderExit()
+  bootloader.write(b"x\x40")#RGB LED off, buttons enabled
+  bootloader.read(1)
+  bootloader.close()
   print("\rFX Data uploaded successfully")
   
 ################################################################################
 
-print("Arduboy FX data uploader v1.18 by Mr.Blinky Feb.2022")
+print(title)
   
 if (len(sys.argv) != 2) or (os.path.isfile(sys.argv[1]) != True) :
   sys.stderr.write("FX data file not found.\n")

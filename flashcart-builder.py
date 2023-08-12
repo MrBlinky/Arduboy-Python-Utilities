@@ -1,4 +1,4 @@
-print("\nArduboy Flashcart image builder v1.09 by Mr.Blinky Jun 2018 - Jun 2022\n")
+print("\nArduboy Flashcart image builder v1.10 by Mr.Blinky Jun 2018 - Aug 2023\n")
 
 # requires PILlow. Use 'python -m pip install pillow' to install
 
@@ -282,6 +282,8 @@ with open(filename,"wb") as binfile:
                     program[0x17] = datapage & 0xFF
                     header[17] = datapage >> 8
                     header[18] = datapage & 0xFF
+                    header[21] = (datasize >> 8) >> 8
+                    header[22] = (datasize >> 8) & 0xFF
                 if savesize > 0:
                     program[0x18] = 0x18
                     program[0x19] = 0x95

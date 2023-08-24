@@ -316,9 +316,10 @@ with open(filename,"wb") as binfile:
                 Sketches += 1
             else:
                 TitleScreens += 1
-        binfile.write(b'\xFF' * 256) #use blank header to signal end of FX file system
+        if nextpage < 65536:
+          binfile.write(b'\xFF' * 256) #use blank header to signal end of FX file system
         print("---- ------------------------- ----- ----- ----- -------- -------- --------")
         print("                                Page  Page  Page    Bytes    Bytes    Bytes")
                 
-print("\nImage build complete with {} Title screens, {} Sketches, {} Kbyte used.".format(TitleScreens,Sketches,(nextpage+3) / 4))
+print("\nImage build complete with {} Title screens, {} Sketches, {} Kbyte used.".format(TitleScreens,Sketches,(nextpage+3) // 4))
 DelayedExit

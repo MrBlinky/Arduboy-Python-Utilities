@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-VERSION = " v1.12"
-VERSION_DATE =" Apr.2020 - Mar.2023"
+VERSION = " v1.13"
+VERSION_DATE =" Apr.2020 - Aug.2023"
 print("Arduboy Uploader GUI/FX activator/flasher" + VERSION + VERSION_DATE + " by Mr.Blinky running\n")
 
 from tkinter import filedialog
@@ -244,13 +244,21 @@ def uploadHexfile():
           enableButtons()
           return
   
-  # check and apply patch for SSD1309
-  if applySsd1309patch.get():
-    lcdBootProgram_addr = flash_data.find(lcdBootProgram)
-    if lcdBootProgram_addr >= 0:
-      flash_data[lcdBootProgram_addr+2] = 0xE3;
-      flash_data[lcdBootProgram_addr+3] = 0xE3;
-      addLog("Found lcdBootProgram in hex file, upload will be patched for SSD1309 displays\n")
+  # check and apply patch for SSD1309 or Contrast
+  if applySsd1309patch.get() or contrastPatch.get() >= 0:
+    lcdBootProgram_addr = flash_data.find(lcdBootProgram[:7])
+    while lcdBootProgram_addr >=0:
+     if flash_data[lcdBootProgram_addr+8:lcdBootProgram_addr+13] == lcdBootProgram[8:]:
+       if applySsd1309patch.get():
+         flash_data[lcdBootProgram_addr+2] = 0xE3;
+         flash_data[lcdBootProgram_addr+3] = 0xE3;
+         addLog("Found lcdBootProgram in hex file, applied SSD1309 display patch\n")
+       if contrastPatch.get() >= 0:
+         flash_data[lcdBootProgram_addr+7] = contrastPatch.get()
+         addLog("Found lcdBootProgram in hex file, applied contrast patch\n")
+       break
+     else:
+       lcdBootProgram_addr = flash_data.find(lcdBootProgram[:7],lcdBootProgram_addr + 7)
   
   ## check  for data in catarina bootloader area ##  
   for i in range (256) :
@@ -324,14 +332,22 @@ def flashImage():
   flashdata = bytearray(f.read())
   f.close
   
-  if applySsd1309patch.get():
-    addLog("Patching flash image for SSD1309 displays...\n")
+  if applySsd1309patch.get() or contrastPatch.get() >= 0:
+    if applySsd1309patch.get() and contrastPatch.get() >= 0:
+      addLog("Patching flash image for SSD1309 displays and contrast change...\n")
+    elif contrastPatch.get() >= 0:
+      addLog("Patching flash image for contrast change...\n")
+    else:
+      addLog("Patching flash image for SSD1309 displays...\n")
     lcdBootProgram_addr = 0
     while lcdBootProgram_addr >= 0:
-      lcdBootProgram_addr = flashdata.find(lcdBootProgram, lcdBootProgram_addr)
-      if lcdBootProgram_addr >= 0:
-        flashdata[lcdBootProgram_addr+2] = 0xE3;
-        flashdata[lcdBootProgram_addr+3] = 0xE3;
+      lcdBootProgram_addr = flashdata.find(lcdBootProgram[:7], lcdBootProgram_addr)
+      if lcdBootProgram_addr >= 0 and flashdata[lcdBootProgram_addr+8:lcdBootProgram_addr+13] == lcdBootProgram[8:]:
+        if applySsd1309patch.get():
+          flashdata[lcdBootProgram_addr+2] = 0xE3;
+          flashdata[lcdBootProgram_addr+3] = 0xE3;
+        if contrastPatch.get() >= 0:
+          flashdata[lcdBootProgram_addr+7] = contrastPatch.get()
   
   if (len(flashdata) % PAGESIZE != 0):
     flashdata += b'\xFF' * (PAGESIZE - (len(flashdata) % PAGESIZE))
@@ -807,6 +823,7 @@ scrollbar.config(command = log.yview)
 appVerify = BooleanVar()
 flashVerify  = BooleanVar()
 applySsd1309patch  = BooleanVar()
+contrastPatch = IntVar()
 
 #create menus
 mainmenu = Menu(root)
@@ -825,6 +842,14 @@ if not (fxActivator or fxFlasher):
   filemenu.add_separator()
 filemenu.add_command(label = "Exit", underline = 1, accelerator = "Ctrl + X", command = root.quit)
 optionmenu = Menu(mainmenu, tearoff = 0)
+contrastmenu = Menu(mainmenu, tearoff = 0)
+contrastmenu.add_radiobutton(label="No change", value = -1, variable=contrastPatch)
+contrastmenu.add_radiobutton(label="Normal", value = 0xCF, variable=contrastPatch)
+contrastmenu.add_radiobutton(label="Dimmed", value = 0x7F, variable=contrastPatch)
+contrastmenu.add_radiobutton(label="Low", value = 0x2F, variable=contrastPatch)
+contrastmenu.add_radiobutton(label="Lowest", value = 0x00, variable=contrastPatch)
+contrastmenu.add_radiobutton(label="Highest", value = 0xFF, variable=contrastPatch)
+contrastPatch.set(-1)
 if not fxFlasher:
   optionmenu.add_checkbutton(label="Verify Hex file after upload",onvalue=True,offvalue=False,variable=appVerify)
   appVerify.set(True)
@@ -832,6 +857,7 @@ optionmenu.add_checkbutton(label="Verify flash data",onvalue=True,offvalue=False
 #flashVerify.set(True)
 optionmenu.add_checkbutton(label="Apply SSD1309 display patch",onvalue=True,offvalue=False,variable=applySsd1309patch)
 applySsd1309patch.set(ssd1309patch)
+optionmenu.add_cascade(label="Contrast patch", menu = contrastmenu)
 optionmenu.add_command(label="Clear log",command=clearLog)
 mainmenu.add_cascade(label="File", menu = filemenu)
 mainmenu.add_cascade(label="Options", menu = optionmenu)

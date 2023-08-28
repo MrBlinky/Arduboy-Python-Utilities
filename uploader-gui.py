@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-VERSION = " v1.13"
+VERSION = " v1.14"
 VERSION_DATE =" Apr.2020 - Aug.2023"
 print("Arduboy Uploader GUI/FX activator/flasher" + VERSION + VERSION_DATE + " by Mr.Blinky running\n")
 
@@ -348,6 +348,7 @@ def flashImage():
           flashdata[lcdBootProgram_addr+3] = 0xE3;
         if contrastPatch.get() >= 0:
           flashdata[lcdBootProgram_addr+7] = contrastPatch.get()
+        lcdBootProgram_addr += 7
   
   if (len(flashdata) % PAGESIZE != 0):
     flashdata += b'\xFF' * (PAGESIZE - (len(flashdata) % PAGESIZE))

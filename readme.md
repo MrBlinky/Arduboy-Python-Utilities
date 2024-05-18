@@ -1,3 +1,8 @@
+:warning: **If you are just looking for a way to upload more games to your Arduboy FX**: Use this new website that doesn't require installing anything on your computer, it uses newer web features to talk directly to USB devices.
+
+[Arduboy FX Cart Builder](https://www.bloggingadeadhorse.com/cart/Cart.html)
+
+
 # Python utilities for Arduboy
 
 For Windows, Linux and OSX

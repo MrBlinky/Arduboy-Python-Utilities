@@ -1,4 +1,4 @@
-print("\nArduboy flash cart backup v1.13 by Mr.Blinky May 2018 jun.2019\n")
+print("\nArduboy flash cart backup v1.14 by Mr.Blinky May 2018 Apr.2025\n")
 
 #requires pyserial to be installed. Use "python -m pip install pyserial" on commandline
 
@@ -130,10 +130,14 @@ if jedec_id[0] in manufacturers.keys():
   manufacturer = manufacturers[jedec_id[0]]
 else:
   manufacturer = "unknown"
-capacity = 1 << jedec_id[2]
+capacity = 1 << ((jedec_id[2] >> 4) * 10 + (jedec_id[2] & 0x0F) + 6)
+carts = (capacity + 16777215) // 16777216
 print("\nFlash cart JEDEC ID    : {:02X}{:02X}{:02X}".format(jedec_id[0],jedec_id[1],jedec_id[2]))
 print("Flash cart Manufacturer: {}".format(manufacturer))
-print("Flash cart capacity    : {} Kbyte\n".format(capacity // 1024))
+if carts == 1:
+  print("Flash cart capacity    : {} Kbyte\n".format(capacity // 1024))
+else:
+  print("Flash cart capacity    : {} x 16 Mbyte carts\n".format(carts))
 
 filename = time.strftime("flashcart-backup-image-%Y%m%d-%H%M%S.bin", time.localtime())
 print('Writing flash image to file: "{}"\n'.format(filename))
@@ -142,6 +146,10 @@ oldtime=time.time()
 blocks = capacity // BLOCKSIZE
 with open(filename,"wb") as binfile:
   for block in range (0, blocks):
+    if (blocks > 256) and ((block % 256) == 0):
+      bootloader.write("T".encode()) #Select 16MB cart slot
+      bootloader.write(bytearray([block // 256]))
+      bootloader.read(1)
     if block & 1:
       bootloader.write(b"x\xC0") #RGB BLUE OFF, buttons disabled
     else:  
@@ -149,7 +157,7 @@ with open(filename,"wb") as binfile:
     bootloader.read(1)      
     sys.stdout.write("\rReading block {}/{}".format(block + 1,blocks))
 
-    blockaddr = block * BLOCKSIZE // PAGESIZE
+    blockaddr = ( block & 0xff) * BLOCKSIZE // PAGESIZE
 
     bootloader.write("A".encode())
     bootloader.write(bytearray([blockaddr >> 8, blockaddr & 0xFF]))

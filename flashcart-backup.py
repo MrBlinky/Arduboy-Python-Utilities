@@ -1,11 +1,11 @@
-print("\nArduboy flash cart backup v1.14 by Mr.Blinky May 2018 Apr.2025\n")
+print("\nArduboy flash cart backup v1.15 by Mr.Blinky May 2018 Apr.2025\n")
 
 #requires pyserial to be installed. Use "python -m pip install pyserial" on commandline
 
 import sys
 import time
 import os
-try: 
+try:
   from serial.tools.list_ports  import comports
   from serial import Serial
 except:
@@ -44,6 +44,7 @@ manufacturers = {
 
 PAGESIZE = 256
 BLOCKSIZE = 65536
+CARTSIZE = 256
 bootloader_active = False
 
 def delayedExit():
@@ -71,11 +72,11 @@ def bootloaderStart():
     print("Selecting bootloader mode...")
     bootloader = Serial(port,1200)
     bootloader.close()
-    time.sleep(0.5)	
+    time.sleep(0.5)
     #wait for disconnect and reconnect in bootloader mode
     while getComPort(False) == port :
       time.sleep(0.1)
-      if bootloader_active: break        
+      if bootloader_active: break
     while getComPort(False) is None : time.sleep(0.1)
     port = getComPort(True)
 
@@ -83,7 +84,7 @@ def bootloaderStart():
   sys.stdout.flush()
   for retries in range(20):
     try:
-      time.sleep(0.1)  
+      time.sleep(0.1)
       bootloader = Serial(port,57600)
       break
     except:
@@ -94,7 +95,7 @@ def bootloaderStart():
       sys.stdout.flush()
       time.sleep(0.4)
   print()
-  
+
 def getVersion():
   bootloader.write("V".encode())
   return int(bootloader.read(2))
@@ -102,21 +103,21 @@ def getVersion():
 def getJedecID():
   bootloader.write("j".encode())
   jedec_id = bootloader.read(3)
-  time.sleep(0.5)  
+  time.sleep(0.5)
   bootloader.write("j".encode())
   jedec_id2 = bootloader.read(3)
   if jedec_id2 != jedec_id :
     print("No flash cart detected.")
     delayedExit()
   return bytearray(jedec_id)
-  
+
 def bootloaderExit():
   global bootloader
   bootloader.write("E".encode())
   bootloader.read(1)
-  
+
 ################################################################################
- 
+
 bootloaderStart()
 
 #check version
@@ -138,43 +139,50 @@ if carts == 1:
   print("Flash cart capacity    : {} Kbyte\n".format(capacity // 1024))
 else:
   print("Flash cart capacity    : {} x 16 Mbyte carts\n".format(carts))
-
-filename = time.strftime("flashcart-backup-image-%Y%m%d-%H%M%S.bin", time.localtime())
-print('Writing flash image to file: "{}"\n'.format(filename))
-
 oldtime=time.time()
-blocks = capacity // BLOCKSIZE
-with open(filename,"wb") as binfile:
-  for block in range (0, blocks):
-    if (blocks > 256) and ((block % 256) == 0):
-      bootloader.write("T".encode()) #Select 16MB cart slot
-      bootloader.write(bytearray([block // 256]))
-      bootloader.read(1)
-    if block & 1:
-      bootloader.write(b"x\xC0") #RGB BLUE OFF, buttons disabled
-    else:  
-      bootloader.write(b"x\xC1") #RGB BLUE RED, buttons disabled
-    bootloader.read(1)      
-    sys.stdout.write("\rReading block {}/{}".format(block + 1,blocks))
+timestamp = time.strftime("%Y%m%d-%H%M%S", time.localtime())
 
-    blockaddr = ( block & 0xff) * BLOCKSIZE // PAGESIZE
-
-    bootloader.write("A".encode())
-    bootloader.write(bytearray([blockaddr >> 8, blockaddr & 0xFF]))
+for cart in range(carts):
+  if carts == 1:
+    filename = "flashcart-backup-image-{}.bin".format(timestamp)
+    blocks = capacity // BLOCKSIZE
+    print('Writing flash image to file: "{}"\n'.format(filename))
+  else:
+    filename = "flashcart-backup-image-{}-{}.bin".format(timestamp, cart + 1)
+    blocks = CARTSIZE
+    bootloader.write("T".encode()) #Select 16MB cart slot
+    bootloader.write(bytearray([cart]))
     bootloader.read(1)
+    print('Writing flash cart {} image to file: "{}"\n'.format(cart + 1,filename))
 
-    blocklen = BLOCKSIZE
+  with open(filename,"wb") as binfile:
+    for block in range (0, blocks):
+      if block & 1:
+        bootloader.write(b"x\xC0") #RGB BLUE OFF, buttons disabled
+      else:
+        bootloader.write(b"x\xC1") #RGB BLUE RED, buttons disabled
+      bootloader.read(1)
+      sys.stdout.write("\rReading block {}/{}".format(block + 1,blocks))
 
-    bootloader.write("g".encode())
-    bootloader.write(bytearray([(blocklen >> 8) & 0xFF, blocklen & 0xFF]))
+      blockaddr = block * BLOCKSIZE // PAGESIZE
 
-    bootloader.write("C".encode())
-    contents=bootloader.read(blocklen)
-    binfile.write(contents)
+      bootloader.write("A".encode())
+      bootloader.write(bytearray([blockaddr >> 8, blockaddr & 0xFF]))
+      bootloader.read(1)
 
+      blocklen = BLOCKSIZE
+
+      bootloader.write("g".encode())
+      bootloader.write(bytearray([(blocklen >> 8) & 0xFF, blocklen & 0xFF]))
+
+      bootloader.write("C".encode())
+      contents=bootloader.read(blocklen)
+      binfile.write(contents)
+    binfile.close()
+    print('\n')
 bootloader.write(b"x\x44")#RGB LED GREEN, buttons enabled
 bootloader.read(1)
-time.sleep(0.5)    
+time.sleep(0.5)
 bootloaderExit()
-print("\n\nDone in {} seconds".format(round(time.time() - oldtime,2)))
+print("Done in {} seconds".format(round(time.time() - oldtime,2)))
 delayedExit()
